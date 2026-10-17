@@ -28,6 +28,7 @@ small{color:#cbb8ee}
 #start{position:fixed;inset:0;z-index:9;background:#1b1230;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px}
 #start p{max-width:520px;color:#cbb8ee;margin:0}
 button:disabled{opacity:.5;cursor:wait}
+body.locked .mindar-ui-scanning{display:none!important}
 body.scan #tabs,body.scan #code,body.scan #bar{display:none}
 #err{position:fixed;left:8px;right:8px;top:8px;z-index:20;background:#ff4d6d;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;display:none;white-space:pre-wrap}
 #load{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;background:#1b1230e6;padding:14px 22px;border-radius:18px;text-align:center;display:none;max-width:86vw}
@@ -60,7 +61,7 @@ addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.me
 <div id="toast"></div><div id="err"></div><div id="load"></div>
 
 <script type="module">
-let THREE,MindARThree;
+let THREE,MindARThree,lockFn=null,isLocked=false;
 
 const $=s=>document.querySelector(s), W=850, H=728, NAMES=['Cây nhị phân','Đồ thị','Ngăn xếp'], DEF=['pre','bfs','push'];
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -257,7 +258,7 @@ function ans(i){const q=S.q;if(!q||q.done)return;q.done=1;q.pick=i;q.right=q.opt
 
 function ui(){
   const L=S.lesson,m=S.mode,B=(a,t,x='',c='')=>`<button class="${c}" data-a="${a}" ${x}>${t}</button>`;
-  $('#tabs').innerHTML=NAMES.map((n,i)=>B('les',`${i+1}. ${n}`,`data-i="${i}"`,(i==L?'on ':'')+(found[i]?'f':''))).join('')+B('code','💻')+B('rst','↺');
+  $('#tabs').innerHTML=NAMES.map((n,i)=>B('les',`${i+1}. ${n}`,`data-i="${i}"`,(i==L?'on ':'')+(found[i]?'f':''))).join('')+(lockFn?B('lock',isLocked?'🔓 Mở khóa':'🔒 Khóa cây','',isLocked?'on':''):'')+B('code','💻')+B('rst','↺');
   let h='<div class="row">'+[['duyet','👀 Duyệt'],['sua','✏️ Sửa'],['quiz','🎓 Quiz']].map(([a,t])=>B('mode',t,`data-m="${a}"`,m==a?'on':'')).join('')+
     (L==0?B('sub',S.sub=='bin'?'🌳 Cây thường':'🔎 BST','','alt'):'')+'</div><div class="row">';
   if(m=='duyet'){
@@ -294,6 +295,7 @@ document.addEventListener('click',e=>{
   else if(a=='code'){S.showCode=!S.showCode;codeHtml()}
   else if(a=='rst'){const m=S.mode;initData();setLesson(L);S.mode=m;toast('Đã đặt lại dữ liệu mẫu')}
   else if(a=='img')dl(+d.i);
+  else if(a=='lock'&&lockFn)lockFn();
   else{edit(a);ui()}
 });
 
@@ -327,15 +329,29 @@ $('#bAR').onclick=async()=>{
     $('#start').style.display='none';document.body.classList.add('scan');
     load('📷 Đang bật camera...<br><small>Hãy bấm <b>Cho phép</b> khi trình duyệt hỏi quyền camera</small>');
     const mind=new MindARThree({container:$('#ar'),imageTargetSrc:'./targets.mind',maxTrack:3,uiLoading:'yes',uiScanning:'yes',uiError:'yes'});
-    const {renderer,scene,camera}=mind,planes=[];
+    const {renderer,scene,camera}=mind,planes=[],anchors=[],locked=[false,false,false];
+    scene.add(camera);                       // để vật gắn vào camera vẫn được vẽ
     [0,1,2].forEach(k=>{
       TEX[k]=new THREE.CanvasTexture(CV[k]);TEX[k].colorSpace=THREE.SRGBColorSpace;
       const p=new THREE.Mesh(new THREE.PlaneGeometry(1,H/W),new THREE.MeshBasicMaterial({map:TEX[k],transparent:true}));
       p.position.z=.005;planes.push(p);
-      const an=mind.addAnchor(k);an.group.add(p);
+      const an=mind.addAnchor(k);an.group.add(p);anchors[k]=an;
       an.onTargetFound=()=>{found[k]=true;load('');document.body.classList.remove('scan');if(S.lesson!==k)setLesson(k);else ui();toast('🎯 Thấy ảnh '+(k+1)+': '+NAMES[k])};
       an.onTargetLost=()=>{found[k]=false;ui()};
     });
+    lockFn=()=>{                              // khóa: gắn tấm cây vào camera, giữ nguyên vị trí hiện tại trên màn hình
+      if(locked.some(Boolean)){
+        planes.forEach((p,k)=>{if(locked[k]){anchors[k].group.add(p);p.position.set(0,0,.005);p.rotation.set(0,0,0);p.scale.set(1,1,1);locked[k]=false}});
+        isLocked=false;document.body.classList.remove('locked');toast('🔓 Đã mở khóa — cây bám theo ảnh trở lại');
+      }else{
+        scene.updateMatrixWorld(true);let c=0;
+        planes.forEach((p,k)=>{if(found[k]){camera.attach(p);locked[k]=true;c++}});
+        if(!c)return toast('Chưa quét thấy ảnh nào để khóa');
+        isLocked=true;document.body.classList.add('locked');toast('🔒 Đã khóa — di chuyển máy thoải mái');
+      }
+      ui();
+    };
+    ui();
     const t=setTimeout(()=>showErr('Camera chưa bật sau 20 giây. Kiểm tra quyền camera của trình duyệt (biểu tượng ổ khóa cạnh thanh địa chỉ) rồi tải lại trang.'),20000);
     await mind.start();clearTimeout(t);load('');
     refresh();
@@ -348,7 +364,7 @@ $('#bAR').onclick=async()=>{
     });
     renderer.setAnimationLoop(()=>renderer.render(scene,camera));
   }catch(err){
-    load('');document.body.classList.remove('scan');$('#start').style.display='flex';
+    load('');document.body.classList.remove('scan','locked');lockFn=null;isLocked=false;ui();$('#start').style.display='flex';
     showErr(((err&&err.message)||err||'Camera bị từ chối hoặc không khả dụng')+'');
   }
 };
