@@ -80,7 +80,14 @@ function initData(){
   G={p:{1:[.2,.28],2:[.5,.2],3:[.8,.3],4:[.3,.72],5:[.58,.6],6:[.85,.76]},e:[[1,2],[1,4],[2,3],[2,5],[3,6],[4,5],[5,6]]};
 }
 const T=()=>D[S.sub];
-function lay(t=T()){const a=[];NV={};(function f(n,d,p){if(!n)return;f(n.l,d+1,n);a.push({n,d,p});NV[n.id]=n.v;f(n.r,d+1,n)})(t.root,0,null);return a}
+function lay(t=T()){   // cây thường: cha ở giữa các con (giống ảnh đích) · BST: trái→phải theo thứ tự giá trị
+  const a=[];NV={};let sl=0;const bin=S.sub=='bin';
+  const f=(n,d,p)=>{if(!n)return null;const e={n,d,p,x:0};a.push(e);NV[n.id]=n.v;
+    if(bin){const xs=[n.l,n.r].map(c=>f(c,d+1,n)).filter(v=>v!==null);e.x=xs.length?xs.reduce((u,v)=>u+v)/xs.length:sl++}
+    else{f(n.l,d+1,n);e.x=sl++;f(n.r,d+1,n)}
+    return e.x};
+  f(t.root,0,null);return a;
+}
 const find=id=>lay().find(e=>e.n.id===id)?.n;
 const lab=(id,L=S.lesson)=>L?id:(NV[id]??id);
 
@@ -166,9 +173,11 @@ const isSel=id=>!PL&&CK===S.lesson&&S.sel===id;
 function dTree(g){
   const a=lay(),P=PS[0]=[];
   if(!a.length){g.fillStyle='#9a7fab';g.font='40px sans-serif';g.textAlign='center';g.fillText('Cây rỗng — vào ✏️ Sửa để thêm nút',W/2,H/2);return}
-  const md=Math.max(...a.map(e=>e.d)),gx=(W-100)/a.length,gy=Math.min(120,(H-300)/Math.max(md,1)),r=Math.min(34,gx*.42),m={};
-  a.forEach((e,i)=>{e.x=50+gx*(i+.5);e.y=160+e.d*gy;m[e.n.id]=e});
+  const xs=a.map(e=>e.x),mn=Math.min(...xs),mx=Math.max(...xs),md=Math.max(...a.map(e=>e.d));
+  const gx=Math.min(210,(W-140)/Math.max(mx-mn,1)),gy=Math.min(142,(H-300)/Math.max(md,1)),r=Math.min(34,gx*.42),m={};
+  a.forEach(e=>{e.x=W/2+(e.x-(mn+mx)/2)*gx;e.y=160+e.d*gy;m[e.n.id]=e});
   a.forEach(e=>e.p&&ln(g,e,m[e.p.id]));
+  if(S.sub=='bin'&&!PL)a.forEach(e=>{const p=e.p;if(p&&!(p.l&&p.r)){const q=m[p.id];g.fillStyle='#a98bff';g.font='bold 22px sans-serif';g.textAlign='left';g.fillText(p.l?'trái':'phải',(e.x+q.x)/2+10,(e.y+q.y)/2)}});
   a.forEach(e=>{node(g,e.x,e.y,r,e.n.v,nst(e.n.id),isSel(e.n.id));P.push({id:e.n.id,x:e.x,y:e.y,r})});
 }
 function dGraph(g){
