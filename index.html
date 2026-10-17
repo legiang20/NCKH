@@ -28,6 +28,7 @@ small{color:#cbb8ee}
 #start{position:fixed;inset:0;z-index:9;background:#1b1230;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px}
 #start p{max-width:520px;color:#cbb8ee;margin:0}
 button:disabled{opacity:.5;cursor:wait}
+body.scan #tabs,body.scan #code,body.scan #bar{display:none}
 #err{position:fixed;left:8px;right:8px;top:8px;z-index:20;background:#ff4d6d;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;display:none;white-space:pre-wrap}
 #load{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;background:#1b1230e6;padding:14px 22px;border-radius:18px;text-align:center;display:none;max-width:86vw}
 #toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;color:#5b3a6b;padding:10px 20px;border-radius:999px;font-weight:700;z-index:10;display:none}
@@ -323,21 +324,20 @@ $('#bAR').onclick=async()=>{
     let r;try{r=await fetch('./targets.mind')}catch(e){throw new Error('Không đọc được targets.mind. Hãy chạy qua Live Server / GitHub Pages (không mở file trực tiếp).')}
     if(!r.ok)throw new Error('Không tìm thấy targets.mind cạnh index.html (HTTP '+r.status+'). Kiểm tra tên file viết thường.');
 
-    $('#start').style.display='none';
+    $('#start').style.display='none';document.body.classList.add('scan');
     load('📷 Đang bật camera...<br><small>Hãy bấm <b>Cho phép</b> khi trình duyệt hỏi quyền camera</small>');
-    const mind=new MindARThree({container:$('#ar'),imageTargetSrc:'./targets.mind',maxTrack:3,uiLoading:'no',uiScanning:'no',uiError:'no'});
+    const mind=new MindARThree({container:$('#ar'),imageTargetSrc:'./targets.mind',maxTrack:3,uiLoading:'yes',uiScanning:'yes',uiError:'yes'});
     const {renderer,scene,camera}=mind,planes=[];
     [0,1,2].forEach(k=>{
       TEX[k]=new THREE.CanvasTexture(CV[k]);TEX[k].colorSpace=THREE.SRGBColorSpace;
       const p=new THREE.Mesh(new THREE.PlaneGeometry(1,H/W),new THREE.MeshBasicMaterial({map:TEX[k],transparent:true}));
       p.position.z=.005;planes.push(p);
       const an=mind.addAnchor(k);an.group.add(p);
-      an.onTargetFound=()=>{found[k]=true;load('');if(S.lesson!==k)setLesson(k);else ui();toast('🎯 Thấy ảnh '+(k+1)+': '+NAMES[k])};
+      an.onTargetFound=()=>{found[k]=true;load('');document.body.classList.remove('scan');if(S.lesson!==k)setLesson(k);else ui();toast('🎯 Thấy ảnh '+(k+1)+': '+NAMES[k])};
       an.onTargetLost=()=>{found[k]=false;ui()};
     });
     const t=setTimeout(()=>showErr('Camera chưa bật sau 20 giây. Kiểm tra quyền camera của trình duyệt (biểu tượng ổ khóa cạnh thanh địa chỉ) rồi tải lại trang.'),20000);
-    await mind.start();clearTimeout(t);
-    load('🔍 Đưa camera vào ảnh cây nhị phân để quét');setTimeout(()=>{if(!found.some(Boolean))load('');},6000);
+    await mind.start();clearTimeout(t);load('');
     refresh();
     const ray=new THREE.Raycaster(),v=new THREE.Vector2();
     renderer.domElement.addEventListener('pointerdown',e=>{
@@ -348,7 +348,7 @@ $('#bAR').onclick=async()=>{
     });
     renderer.setAnimationLoop(()=>renderer.render(scene,camera));
   }catch(err){
-    load('');$('#start').style.display='flex';
+    load('');document.body.classList.remove('scan');$('#start').style.display='flex';
     showErr(((err&&err.message)||err||'Camera bị từ chối hoặc không khả dụng')+'');
   }
 };
