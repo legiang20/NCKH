@@ -13,8 +13,11 @@ body{margin:0;font-family:system-ui,'Segoe UI',sans-serif;background:#1b1230;col
 button,input{font:inherit;border:0;border-radius:999px;padding:7px 13px;font-weight:700}
 button{background:#ece4ff;color:#5b3a6b;cursor:pointer}
 button.on{background:#ff8fc7;color:#fff}button.f{outline:3px solid #b8f2e0}button.alt{background:#ffe98a}
-#tabs{position:fixed;top:8px;left:8px;right:8px;display:flex;gap:6px;flex-wrap:wrap;z-index:6}
-#code{position:fixed;left:8px;top:54px;width:min(310px,56vw);max-height:46vh;overflow:auto;background:#1b1230d9;border-radius:14px;padding:8px;z-index:6;font:12px/1.5 Consolas,monospace}
+#top{position:fixed;top:8px;left:8px;right:8px;z-index:6;display:flex;flex-direction:column;gap:6px;align-items:flex-start;pointer-events:none}
+#top>*{pointer-events:auto}
+#tabs{display:flex;gap:6px;flex-wrap:wrap}
+#tabs button{padding:6px 12px;font-size:14px}
+#code{width:min(330px,70vw);max-height:38vh;overflow:auto;background:#1b1230d9;border-radius:14px;padding:8px;font:12px/1.5 Consolas,monospace}
 #code .ln{white-space:pre;padding:0 6px;border-radius:5px;color:#cbb8ee}
 #code .ln.on{background:#ff8fc7;color:#fff;font-weight:700}
 #code .note{margin-top:6px;color:#ffe98a;font:600 12px system-ui}
@@ -56,7 +59,7 @@ addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.me
   <p>Tải ảnh đích để in/ghép vào file .mind (đúng thứ tự: cây → đồ thị → ngăn xếp):</p>
   <div><button data-a="img" data-i="1">⬇ Ảnh Đồ thị</button> <button data-a="img" data-i="2">⬇ Ảnh Ngăn xếp</button></div>
 </div>
-<div id="tabs"></div><div id="code"></div>
+<div id="top"><div id="tabs"></div><div id="code"></div></div>
 <div id="bar"><input id="val" type="number" placeholder="giá trị"><div id="ctl"></div></div>
 <div id="toast"></div><div id="err"></div><div id="load"></div>
 
@@ -70,7 +73,7 @@ const toast=m=>{const t=$('#toast');t.textContent=m;t.style.display='block';clea
 
 // ================= DỮ LIỆU =================
 let nid=1; const mk=v=>({id:nid++,v,l:null,r:null});
-let D,G; const S={lesson:0,mode:'duyet',sub:'bin',sel:null,steps:[],i:-1,code:'pre',py:false,tm:0,q:null,sc:[0,0],showCode:true};
+let D,G; const S={lesson:0,mode:'duyet',sub:'bin',sel:null,steps:[],i:-1,code:'pre',lang:'gia',tm:0,q:null,sc:[0,0],showCode:true};
 const found=[false,false,false]; let flat=false, CK=0, PL=false, NV={};
 function initData(){
   nid=1; const a=[1,2,3,4,5,6].map(mk);               // cây mẫu giống ảnh đích
@@ -135,10 +138,17 @@ function rmB(n,id,tv){                                                          
 
 // ================= MÃ GIẢ + PYTHON (cùng số dòng) =================
 const FN={pre:'pre_order',in:'in_order',post:'post_order'};
+const CPP={
+ level:['void bfs(Node* root) {','  queue<Node*> q; q.push(root);','  while (!q.empty()) {','    Node* n = q.front(); q.pop();','    cout << n->val << " ";','    for (auto c : {n->left, n->right}) if (c) q.push(c);','  }','}'],
+ insert:['Node* insert(Node* n, int x) {','  if (!n)','    return new Node(x);','  if (x < n->val)','    n->left = insert(n->left, x);','  else if (x > n->val)','    n->right = insert(n->right, x);','  return n;','}'],
+ bfs:['void bfs(int s) {','  queue<int> q; q.push(s); vis[s] = true;','  while (!q.empty()) {','    int u = q.front(); q.pop();','    cout << u << " ";','    for (int v : g[u])','      if (!vis[v]) {','        vis[v] = true; q.push(v);','      }','  }','}'],
+ dfs:['void dfs(int u) {','  vis[u] = true;','  cout << u << " ";','  for (int v : g[u])','    if (!vis[v])','      dfs(v);','}'],
+ push:['void push(int x) {','  st.push(x);','}'],
+ pop:['int pop() {','  if (st.empty()) throw runtime_error("rong");','  int x = st.top(); st.pop();','  return x;','}']};
 function codeOf(k){
-  if(FN[k]){const o={pre:'vlr',in:'lvr',post:'lrv'}[k],a={v:['THĂM n','print(n.val)'],l:['DUYỆT(n.trái)',FN[k]+'(n.left)'],r:['DUYỆT(n.phải)',FN[k]+'(n.right)']};
-    return {gia:[k.toUpperCase()+'(n):','  nếu n rỗng: quay lại',...[...o].map(c=>'  '+a[c][0])],py:[`def ${FN[k]}(n):`,'  if n is None: return',...[...o].map(c=>'  '+a[c][1])]}}
-  return {
+  if(FN[k]){const o={pre:'vlr',in:'lvr',post:'lrv'}[k],a={v:['THĂM n','print(n.val)','cout << n->val << " ";'],l:['DUYỆT(n.trái)',FN[k]+'(n.left)',FN[k]+'(n->left);'],r:['DUYỆT(n.phải)',FN[k]+'(n.right)',FN[k]+'(n->right);']};
+    return {gia:[k.toUpperCase()+'(n):','  nếu n rỗng: quay lại',...[...o].map(c=>'  '+a[c][0])],py:[`def ${FN[k]}(n):`,'  if n is None: return',...[...o].map(c=>'  '+a[c][1])],cpp:[`void ${FN[k]}(Node* n) {`,'  if (!n) return;',...[...o].map(c=>'  '+a[c][2]),'}']}}
+  const C={
   level:{gia:['DUYỆT_MỨC(gốc):','  q ← [gốc]','  lặp khi q không rỗng:','    n ← lấy đầu q','    THĂM n','    thêm con n vào q'],
          py:['def bfs(root):','  q = [root]','  while q:','    n = q.pop(0)','    print(n.val)','    q += [c for c in (n.left, n.right) if c]']},
   insert:{gia:['CHÈN(n, x):','  nếu n rỗng:','    trả về nút mới x','  nếu x < n.giá_trị:','    n.trái ← CHÈN(n.trái, x)','  ngược lại nếu x > n.giá_trị:','    n.phải ← CHÈN(n.phải, x)','  trả về n'],
@@ -149,14 +159,15 @@ function codeOf(k){
        py:['def dfs(u):','  vis.add(u)','  print(u)','  for v in g[u]:','    if v not in vis:','      dfs(v)']},
   push:{gia:['ĐẨY(x):','  thêm x lên đỉnh'],py:['def push(x):','  st.append(x)']},
   pop:{gia:['LẤY():','  nếu rỗng: báo lỗi','  trả về phần tử đỉnh và bỏ nó'],py:['def pop():','  if not st: raise IndexError','  return st.pop()']}}[k];
+  return {...C,cpp:CPP[k]};
 }
 const cur=()=>PL||CK!==S.lesson?null:(S.steps[S.i]||null);
 function codeHtml(){
   if(!S.showCode){$('#code').style.display='none';return}
-  const c=codeOf(S.code),ls=c[S.py?'py':'gia'],s=S.steps[S.i];
+  const c=codeOf(S.code),ls=c[S.lang],st=S.steps[S.i];
   $('#code').style.display='';
-  $('#code').innerHTML=`<button data-a="py" class="${S.py?'':'on'}" data-v="0">Mã giả</button><button data-a="py" class="${S.py?'on':''}" data-v="1">Python</button>`+
-    ls.map((t,i)=>`<div class="ln ${s&&s.l===i?'on':''}">${esc(t)}</div>`).join('')+(s?`<div class="note">▶ ${esc(s.note||'')}</div>`:'');
+  $('#code').innerHTML=[['gia','Mã giả'],['py','Python'],['cpp','C++']].map(([v,t])=>`<button data-a="py" data-v="${v}" class="${S.lang==v?'on':''}">${t}</button>`).join('')+
+    ls.map((t,i)=>`<div class="ln ${st&&st.l===i?'on':''}">${esc(t)}</div>`).join('')+(st?`<div class="note">▶ ${esc(st.note||'')}</div>`:'');
 }
 
 // ================= VẼ (dùng chung cho AR texture và 2D) =================
@@ -267,7 +278,7 @@ function ans(i){const q=S.q;if(!q||q.done)return;q.done=1;q.pick=i;q.right=q.opt
 
 function ui(){
   const L=S.lesson,m=S.mode,B=(a,t,x='',c='')=>`<button class="${c}" data-a="${a}" ${x}>${t}</button>`;
-  $('#tabs').innerHTML=NAMES.map((n,i)=>B('les',`${i+1}. ${n}`,`data-i="${i}"`,(i==L?'on ':'')+(found[i]?'f':''))).join('')+(lockFn?B('lock',isLocked?'🔓 Mở khóa':'🔒 Khóa cây','',isLocked?'on':''):'')+B('code','💻')+B('rst','↺');
+  $('#tabs').innerHTML=B('code',S.showCode?'▼ Code':'▶ Code','',S.showCode?'':'alt')+NAMES.map((n,i)=>B('les',`${i+1}. ${n.replace(' nhị phân','')}`,`data-i="${i}"`,(i==L?'on ':'')+(found[i]?'f':''))).join('')+(lockFn?B('lock',isLocked?'🔓 Mở khóa':'🔒 Khóa cây','',isLocked?'on':'alt'):'')+B('rst','↺');
   let h='<div class="row">'+[['duyet','👀 Duyệt'],['sua','✏️ Sửa'],['quiz','🎓 Quiz']].map(([a,t])=>B('mode',t,`data-m="${a}"`,m==a?'on':'')).join('')+
     (L==0?B('sub',S.sub=='bin'?'🌳 Cây thường':'🔎 BST','','alt'):'')+'</div><div class="row">';
   if(m=='duyet'){
@@ -300,8 +311,8 @@ document.addEventListener('click',e=>{
   else if(a=='pp'){if(S.tm)stop();else if(S.steps.length){if(S.i>=S.steps.length-1)S.i=0;play(S.steps,S.code)}}
   else if(a=='opt')ans(+d.i);
   else if(a=='nq'){S.q=newQ();clear();ui();refresh()}
-  else if(a=='py'){S.py=d.v=='1';codeHtml()}
-  else if(a=='code'){S.showCode=!S.showCode;codeHtml()}
+  else if(a=='py'){S.lang=d.v;codeHtml()}
+  else if(a=='code'){S.showCode=!S.showCode;ui();codeHtml()}
   else if(a=='rst'){const m=S.mode;initData();setLesson(L);S.mode=m;toast('Đã đặt lại dữ liệu mẫu')}
   else if(a=='img')dl(+d.i);
   else if(a=='lock'&&lockFn)lockFn();
