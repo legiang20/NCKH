@@ -27,13 +27,20 @@ button.on{background:#ff8fc7;color:#fff}button.f{outline:3px solid #b8f2e0}butto
 small{color:#cbb8ee}
 #start{position:fixed;inset:0;z-index:9;background:#1b1230;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:20px}
 #start p{max-width:520px;color:#cbb8ee;margin:0}
+button:disabled{opacity:.5;cursor:wait}
+#err{position:fixed;left:8px;right:8px;top:8px;z-index:20;background:#ff4d6d;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;display:none;white-space:pre-wrap}
+#load{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;background:#1b1230e6;padding:14px 22px;border-radius:18px;text-align:center;display:none;max-width:86vw}
 #toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;color:#5b3a6b;padding:10px 20px;border-radius:999px;font-weight:700;z-index:10;display:none}
 </style>
+<script>
+function showErr(m){var e=document.getElementById('err');if(e){e.style.display='block';e.textContent='⚠ '+m}console.error(m)}
+addEventListener('error',function(e){showErr(e.message||'lỗi script')});
+addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.message)||e.reason||'lỗi không rõ')});
+</script>
 <script type="importmap">
 {"imports":{
 "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
-"three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/",
-"mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"}}
+"three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
 </script>
 </head>
 <body>
@@ -41,18 +48,18 @@ small{color:#cbb8ee}
 <div id="start">
   <h1>🌳 AR Cấu trúc dữ liệu</h1>
   <p>Ảnh 1 = Cây nhị phân · Ảnh 2 = Đồ thị · Ảnh 3 = Ngăn xếp. Đưa camera vào ảnh đích, bài học tự chuyển theo ảnh.</p>
-  <button id="bAR" class="on">📷 Bắt đầu AR</button>
+  <p id="stt">⏳ Đang khởi động...</p>
+  <button id="bAR" class="on" disabled>📷 Bắt đầu AR</button>
   <button id="b2D">🖥️ Chế độ 2D (không cần camera)</button>
   <p>Tải ảnh đích để in/ghép vào file .mind (đúng thứ tự: cây → đồ thị → ngăn xếp):</p>
   <div><button data-a="img" data-i="1">⬇ Ảnh Đồ thị</button> <button data-a="img" data-i="2">⬇ Ảnh Ngăn xếp</button></div>
 </div>
 <div id="tabs"></div><div id="code"></div>
 <div id="bar"><input id="val" type="number" placeholder="giá trị"><div id="ctl"></div></div>
-<div id="toast"></div>
+<div id="toast"></div><div id="err"></div><div id="load"></div>
 
 <script type="module">
-import * as THREE from 'three';
-import {MindARThree} from 'mindar-image-three';
+let THREE,MindARThree;
 
 const $=s=>document.querySelector(s), W=850, H=728, NAMES=['Cây nhị phân','Đồ thị','Ngăn xếp'], DEF=['pre','bfs','push'];
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -145,7 +152,7 @@ function codeHtml(){
 
 // ================= VẼ (dùng chung cho AR texture và 2D) =================
 const CV=[0,1,2].map(()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c}), TEX=[], PS=[[],[],[]];
-const nst=id=>{const s=cur();return s?s.cur===id?'cur':s.out.includes(id)?'vis':'':''};
+const nst=id=>{const s=cur();return s?s.cur===id?'cur':(s.out||[]).includes(id)?'vis':'':''};
 function node(g,x,y,r,t,st,sel){
   g.lineWidth=7;g.strokeStyle='#222';g.fillStyle=st=='cur'?'#ff8fc7':st=='vis'?'#b8f2e0':'#fff';
   g.beginPath();g.arc(x,y,r,0,7);g.fill();g.stroke();
@@ -185,7 +192,7 @@ function draw(g,k){
   [dTree,dGraph,dStack][k](g);
   const s=cur();
   if(s){g.fillStyle='#5b3a6b';g.font='600 28px sans-serif';g.textAlign='left';g.fillText(s.note||'',36,96);
-    if(k<2){g.fillStyle='#a98bff';g.font='bold 32px sans-serif';g.fillText('Kết quả: '+s.out.map(i=>lab(i,k)).join(' → '),36,H-36)}}
+    if(k<2){g.fillStyle='#a98bff';g.font='bold 32px sans-serif';g.fillText('Kết quả: '+(s.out||[]).map(i=>lab(i,k)).join(' → '),36,H-36)}}
 }
 const paint=k=>{draw(CV[k].getContext('2d'),k);if(TEX[k])TEX[k].needsUpdate=true};
 function refresh(){paint(S.lesson);codeHtml()}
@@ -290,11 +297,34 @@ document.addEventListener('click',e=>{
 });
 
 // ================= KHỞI ĐỘNG =================
-initData();[0,1,2].forEach(paint);ui();codeHtml();
-function start2D(){flat=true;$('#start').style.display='none';$('#flat').style.display='flex';$('#flat').replaceChildren(CV[S.lesson]);refresh()}
+const stt=m=>$('#stt').textContent=m, load=m=>{const l=$('#load');l.style.display=m?'block':'none';l.innerHTML=m};
+try{initData();[0,1,2].forEach(paint);ui();codeHtml()}catch(e){showErr('Lỗi khởi tạo: '+e.message)}
+function start2D(){flat=true;$('#start').style.display='none';load('');$('#flat').style.display='flex';$('#flat').replaceChildren(CV[S.lesson]);refresh()}
 $('#b2D').onclick=start2D;
-$('#bAR').onclick=async()=>{
+
+async function loadLibs(){                      // tải Three.js + MindAR, có CDN dự phòng
   try{
+    THREE=await import('three');
+    for(const u of ['https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js','https://unpkg.com/mind-ar@1.2.5/dist/mindar-image-three.prod.js']){
+      try{({MindARThree}=await import(u));break}catch(e){console.warn('Lỗi tải',u,e)}}
+    if(!MindARThree)throw new Error('không tải được MindAR từ CDN');
+    stt('✅ Thư viện AR đã sẵn sàng');$('#bAR').disabled=false;
+  }catch(e){stt('❌ Không tải được thư viện AR ('+(e&&e.message||e)+'). Kiểm tra mạng rồi tải lại trang, hoặc dùng chế độ 2D.')}
+}
+loadLibs();
+
+$('#bAR').onclick=async()=>{
+  $('#err').style.display='none';
+  try{
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)
+      throw new Error('Trình duyệt đang chặn camera. Hãy mở bằng https:// hoặc http://localhost (Live Server / GitHub Pages), không mở file trực tiếp; dùng Chrome hoặc Safari, không dùng trình duyệt trong Zalo/Facebook.');
+    const dv=await navigator.mediaDevices.enumerateDevices();
+    if(!dv.some(d=>d.kind=='videoinput'))throw new Error('Thiết bị này không có camera — hãy dùng điện thoại hoặc chọn chế độ 2D.');
+    let r;try{r=await fetch('./targets.mind')}catch(e){throw new Error('Không đọc được targets.mind. Hãy chạy qua Live Server / GitHub Pages (không mở file trực tiếp).')}
+    if(!r.ok)throw new Error('Không tìm thấy targets.mind cạnh index.html (HTTP '+r.status+'). Kiểm tra tên file viết thường.');
+
+    $('#start').style.display='none';
+    load('📷 Đang bật camera...<br><small>Hãy bấm <b>Cho phép</b> khi trình duyệt hỏi quyền camera</small>');
     const mind=new MindARThree({container:$('#ar'),imageTargetSrc:'./targets.mind',maxTrack:3,uiLoading:'no',uiScanning:'no',uiError:'no'});
     const {renderer,scene,camera}=mind,planes=[];
     [0,1,2].forEach(k=>{
@@ -302,24 +332,24 @@ $('#bAR').onclick=async()=>{
       const p=new THREE.Mesh(new THREE.PlaneGeometry(1,H/W),new THREE.MeshBasicMaterial({map:TEX[k],transparent:true}));
       p.position.z=.005;planes.push(p);
       const an=mind.addAnchor(k);an.group.add(p);
-      an.onTargetFound=()=>{found[k]=true;if(S.lesson!==k)setLesson(k);else ui();toast('🎯 Thấy ảnh '+(k+1)+': '+NAMES[k])};
+      an.onTargetFound=()=>{found[k]=true;load('');if(S.lesson!==k)setLesson(k);else ui();toast('🎯 Thấy ảnh '+(k+1)+': '+NAMES[k])};
       an.onTargetLost=()=>{found[k]=false;ui()};
     });
-    await mind.start();
+    const t=setTimeout(()=>showErr('Camera chưa bật sau 20 giây. Kiểm tra quyền camera của trình duyệt (biểu tượng ổ khóa cạnh thanh địa chỉ) rồi tải lại trang.'),20000);
+    await mind.start();clearTimeout(t);
+    load('🔍 Đưa camera vào ảnh cây nhị phân để quét');setTimeout(()=>{if(!found.some(Boolean))load('');},6000);
     refresh();
     const ray=new THREE.Raycaster(),v=new THREE.Vector2();
-    renderer.domElement.addEventListener('pointerdown',e=>{      // chạm vào mặt phẳng AR → tìm nút
-      const r=renderer.domElement.getBoundingClientRect();
-      v.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(v,camera);
+    renderer.domElement.addEventListener('pointerdown',e=>{
+      const rc=renderer.domElement.getBoundingClientRect();
+      v.set((e.clientX-rc.left)/rc.width*2-1,-((e.clientY-rc.top)/rc.height)*2+1);ray.setFromCamera(v,camera);
       const hit=ray.intersectObjects(planes.filter(p=>p.parent.visible))[0];
       if(hit)tapAt(planes.indexOf(hit.object),hit.uv.x*W,(1-hit.uv.y)*H);
     });
     renderer.setAnimationLoop(()=>renderer.render(scene,camera));
-    $('#start').style.display='none';
   }catch(err){
-    console.error(err);
-    alert('Không bật được AR ('+(err.message||err)+').\nHãy mở bằng Live Server (http://localhost), cho phép camera, và để targets.mind cùng thư mục. Đang chuyển sang chế độ 2D.');
-    start2D();
+    load('');$('#start').style.display='flex';
+    showErr(((err&&err.message)||err||'Camera bị từ chối hoặc không khả dụng')+'');
   }
 };
 </script>
