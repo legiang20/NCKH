@@ -17,7 +17,7 @@ button.on{background:#ff8fc7;color:#fff}button.f{outline:3px solid #b8f2e0}butto
 #top>*{pointer-events:auto}
 #tabs{display:flex;gap:6px;flex-wrap:wrap}
 #tabs button{padding:6px 12px;font-size:14px}
-#code{width:min(330px,70vw);max-height:38vh;overflow:auto;background:#1b1230d9;border-radius:14px;padding:8px;font:12px/1.5 Consolas,monospace}
+#code{margin-top:6px;width:min(300px,62vw);max-height:38vh;overflow:auto;background:#1b1230d9;border-radius:14px;padding:8px;font:12px/1.5 Consolas,monospace}
 #code .ln{white-space:pre;padding:0 6px;border-radius:5px;color:#cbb8ee}
 #code .ln.on{background:#ff8fc7;color:#fff;font-weight:700}
 #code .note{margin-top:6px;color:#ffe98a;font:600 12px system-ui}
@@ -32,6 +32,8 @@ small{color:#cbb8ee}
 #start p{max-width:520px;color:#cbb8ee;margin:0}
 button:disabled{opacity:.5;cursor:wait}
 body.locked .mindar-ui-scanning{display:none!important}
+#lockbtn{position:fixed;right:12px;top:38%;width:62px;height:62px;border-radius:50%;font-size:28px;padding:0;z-index:7;box-shadow:0 4px 14px #0007;display:none}
+body.scan #lockbtn{display:none!important}
 body.scan #tabs,body.scan #code,body.scan #bar{display:none}
 #err{position:fixed;left:8px;right:8px;top:8px;z-index:20;background:#ff4d6d;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;display:none;white-space:pre-wrap}
 #load{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;background:#1b1230e6;padding:14px 22px;border-radius:18px;text-align:center;display:none;max-width:86vw}
@@ -60,6 +62,7 @@ addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.me
   <div><button data-a="img" data-i="1">⬇ Ảnh Đồ thị</button> <button data-a="img" data-i="2">⬇ Ảnh Ngăn xếp</button></div>
 </div>
 <div id="top"><div id="tabs"></div><div id="code"></div></div>
+<button id="lockbtn" data-a="lock" title="Khóa / mở khóa cây"></button>
 <div id="bar"><input id="val" type="number" placeholder="giá trị"><div id="ctl"></div></div>
 <div id="toast"></div><div id="err"></div><div id="load"></div>
 
@@ -138,6 +141,14 @@ function rmB(n,id,tv){                                                          
 
 // ================= MÃ GIẢ + PYTHON (cùng số dòng) =================
 const FN={pre:'pre_order',in:'in_order',post:'post_order'};
+const CN={pre:'PreOrder',in:'InOrder',post:'PostOrder'};
+const CS={
+ level:['void Bfs(Node root) {','  var q = new Queue<Node>(); q.Enqueue(root);','  while (q.Count > 0) {','    var n = q.Dequeue();','    Console.Write(n.Val + " ");','    foreach (var c in new[] { n.Left, n.Right }) if (c != null) q.Enqueue(c);','  }','}'],
+ insert:['Node Insert(Node n, int x) {','  if (n == null)','    return new Node(x);','  if (x < n.Val)','    n.Left = Insert(n.Left, x);','  else if (x > n.Val)','    n.Right = Insert(n.Right, x);','  return n;','}'],
+ bfs:['void Bfs(int s) {','  var q = new Queue<int>(); q.Enqueue(s); vis[s] = true;','  while (q.Count > 0) {','    int u = q.Dequeue();','    Console.Write(u + " ");','    foreach (int v in g[u])','      if (!vis[v]) {','        vis[v] = true; q.Enqueue(v);','      }','  }','}'],
+ dfs:['void Dfs(int u) {','  vis[u] = true;','  Console.Write(u + " ");','  foreach (int v in g[u])','    if (!vis[v])','      Dfs(v);','}'],
+ push:['void Push(int x) {','  st.Push(x);','}'],
+ pop:['int Pop() {','  if (st.Count == 0) throw new InvalidOperationException();','  int x = st.Pop();','  return x;','}']};
 const CPP={
  level:['void bfs(Node* root) {','  queue<Node*> q; q.push(root);','  while (!q.empty()) {','    Node* n = q.front(); q.pop();','    cout << n->val << " ";','    for (auto c : {n->left, n->right}) if (c) q.push(c);','  }','}'],
  insert:['Node* insert(Node* n, int x) {','  if (!n)','    return new Node(x);','  if (x < n->val)','    n->left = insert(n->left, x);','  else if (x > n->val)','    n->right = insert(n->right, x);','  return n;','}'],
@@ -146,8 +157,8 @@ const CPP={
  push:['void push(int x) {','  st.push(x);','}'],
  pop:['int pop() {','  if (st.empty()) throw runtime_error("rong");','  int x = st.top(); st.pop();','  return x;','}']};
 function codeOf(k){
-  if(FN[k]){const o={pre:'vlr',in:'lvr',post:'lrv'}[k],a={v:['THĂM n','print(n.val)','cout << n->val << " ";'],l:['DUYỆT(n.trái)',FN[k]+'(n.left)',FN[k]+'(n->left);'],r:['DUYỆT(n.phải)',FN[k]+'(n.right)',FN[k]+'(n->right);']};
-    return {gia:[k.toUpperCase()+'(n):','  nếu n rỗng: quay lại',...[...o].map(c=>'  '+a[c][0])],py:[`def ${FN[k]}(n):`,'  if n is None: return',...[...o].map(c=>'  '+a[c][1])],cpp:[`void ${FN[k]}(Node* n) {`,'  if (!n) return;',...[...o].map(c=>'  '+a[c][2]),'}']}}
+  if(FN[k]){const o={pre:'vlr',in:'lvr',post:'lrv'}[k],a={v:['THĂM n','print(n.val)','cout << n->val << " ";','Console.Write(n.Val + " ");'],l:['DUYỆT(n.trái)',FN[k]+'(n.left)',FN[k]+'(n->left);',CN[k]+'(n.Left);'],r:['DUYỆT(n.phải)',FN[k]+'(n.right)',FN[k]+'(n->right);',CN[k]+'(n.Right);']};
+    return {gia:[k.toUpperCase()+'(n):','  nếu n rỗng: quay lại',...[...o].map(c=>'  '+a[c][0])],py:[`def ${FN[k]}(n):`,'  if n is None: return',...[...o].map(c=>'  '+a[c][1])],cpp:[`void ${FN[k]}(Node* n) {`,'  if (!n) return;',...[...o].map(c=>'  '+a[c][2]),'}'],cs:[`void ${CN[k]}(Node n) {`,'  if (n == null) return;',...[...o].map(c=>'  '+a[c][3]),'}']}}
   const C={
   level:{gia:['DUYỆT_MỨC(gốc):','  q ← [gốc]','  lặp khi q không rỗng:','    n ← lấy đầu q','    THĂM n','    thêm con n vào q'],
          py:['def bfs(root):','  q = [root]','  while q:','    n = q.pop(0)','    print(n.val)','    q += [c for c in (n.left, n.right) if c]']},
@@ -159,14 +170,14 @@ function codeOf(k){
        py:['def dfs(u):','  vis.add(u)','  print(u)','  for v in g[u]:','    if v not in vis:','      dfs(v)']},
   push:{gia:['ĐẨY(x):','  thêm x lên đỉnh'],py:['def push(x):','  st.append(x)']},
   pop:{gia:['LẤY():','  nếu rỗng: báo lỗi','  trả về phần tử đỉnh và bỏ nó'],py:['def pop():','  if not st: raise IndexError','  return st.pop()']}}[k];
-  return {...C,cpp:CPP[k]};
+  return {...C,cpp:CPP[k],cs:CS[k]};
 }
 const cur=()=>PL||CK!==S.lesson?null:(S.steps[S.i]||null);
 function codeHtml(){
   if(!S.showCode){$('#code').style.display='none';return}
   const c=codeOf(S.code),ls=c[S.lang],st=S.steps[S.i];
   $('#code').style.display='';
-  $('#code').innerHTML=[['gia','Mã giả'],['py','Python'],['cpp','C++']].map(([v,t])=>`<button data-a="py" data-v="${v}" class="${S.lang==v?'on':''}">${t}</button>`).join('')+
+  $('#code').innerHTML=[['gia','Mã giả'],['py','Python'],['cpp','C++'],['cs','C#']].map(([v,t])=>`<button data-a="py" data-v="${v}" class="${S.lang==v?'on':''}">${t}</button>`).join('')+
     ls.map((t,i)=>`<div class="ln ${st&&st.l===i?'on':''}">${esc(t)}</div>`).join('')+(st?`<div class="note">▶ ${esc(st.note||'')}</div>`:'');
 }
 
@@ -278,7 +289,8 @@ function ans(i){const q=S.q;if(!q||q.done)return;q.done=1;q.pick=i;q.right=q.opt
 
 function ui(){
   const L=S.lesson,m=S.mode,B=(a,t,x='',c='')=>`<button class="${c}" data-a="${a}" ${x}>${t}</button>`;
-  $('#tabs').innerHTML=B('code',S.showCode?'▼ Code':'▶ Code','',S.showCode?'':'alt')+NAMES.map((n,i)=>B('les',`${i+1}. ${n.replace(' nhị phân','')}`,`data-i="${i}"`,(i==L?'on ':'')+(found[i]?'f':''))).join('')+(lockFn?B('lock',isLocked?'🔓 Mở khóa':'🔒 Khóa cây','',isLocked?'on':'alt'):'')+B('rst','↺');
+  $('#tabs').innerHTML=B('code',S.showCode?'▼ Code':'▶ Code','',S.showCode?'':'alt')+NAMES.map((n,i)=>B('les',`${i+1}. ${n.replace(' nhị phân','')}`,`data-i="${i}"`,(i==L?'on ':'')+(found[i]?'f':''))).join('')+B('rst','↺');
+  const lb=$('#lockbtn');lb.style.display=lockFn?'block':'none';lb.textContent=isLocked?'🔓':'🔒';lb.className=isLocked?'on':'alt';
   let h='<div class="row">'+[['duyet','👀 Duyệt'],['sua','✏️ Sửa'],['quiz','🎓 Quiz']].map(([a,t])=>B('mode',t,`data-m="${a}"`,m==a?'on':'')).join('')+
     (L==0?B('sub',S.sub=='bin'?'🌳 Cây thường':'🔎 BST','','alt'):'')+'</div><div class="row">';
   if(m=='duyet'){
