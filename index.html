@@ -54,7 +54,7 @@ addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.me
 <div id="ar"></div><div id="flat"></div>
 <div id="start">
   <h1>🌳 AR Cấu trúc dữ liệu</h1>
-  <p>Quét ảnh mục tiêu để hiện cây nhị phân 3D nổi trong không gian. Chạm vào nút 3D để chọn, duyệt, thêm/xóa và làm trắc nghiệm.</p>
+  <p>Đưa camera vào ảnh cây nhị phân, cây AR sẽ hiện lên để bạn duyệt, thêm/xóa nút và làm trắc nghiệm.</p>
   <p id="stt">⏳ Đang khởi động...</p>
   <button id="bAR" class="on" disabled>📷 Bắt đầu AR</button>
   <button id="b2D">🖥️ Chế độ 2D (không cần camera)</button>
@@ -189,7 +189,7 @@ function draw(g,k){
     if(k<2){g.fillStyle='#a98bff';g.font='bold 32px sans-serif';g.fillText('Kết quả: '+(s.out||[]).map(i=>lab(i,k)).join(' → '),36,H-36)}}
 }
 const paint=k=>{draw(CV[k].getContext('2d'),k);if(TEX[k])TEX[k].needsUpdate=true};
-function refresh(){paint(S.lesson);codeHtml();if(AR3D)rebuild3DTree(S.lesson)}
+function refresh(){paint(S.lesson);codeHtml()}
 // ================= ĐIỀU KHIỂN =================
 function stop(){clearInterval(S.tm);S.tm=0}
 function play(steps,code){stop();S.steps=steps;S.i=0;S.code=code;
@@ -277,49 +277,6 @@ document.addEventListener('click',e=>{
   else{edit(a);ui()}
 });
 
-// ================= CÂY 3D THỰC (không dùng ảnh phẳng trong AR) =================
-let AR3D=null, ARNODE=[];
-function makeTextSprite(text, color='#ffffff', size=64){
-  const c=document.createElement('canvas');c.width=256;c.height=128;
-  const g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);
-  g.font=`900 ${size}px system-ui, sans-serif`;g.textAlign='center';g.textBaseline='middle';
-  g.lineWidth=10;g.strokeStyle='rgba(42,25,75,.55)';g.strokeText(String(text),128,64);
-  g.fillStyle=color;g.fillText(String(text),128,64);
-  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
-  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:true}));
-  sp.scale.set(.105,.052,1);return sp;
-}
-function makeTube(a,b,material,r=.012){
-  const start=new THREE.Vector3(a.x,a.y,a.z), end=new THREE.Vector3(b.x,b.y,b.z);
-  const delta=end.clone().sub(start), mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,delta.length(),12),material);
-  mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());return mesh;
-}
-function rebuild3DTree(k=0){
-  if(!AR3D||!THREE)return;
-  while(AR3D.children.length){const o=AR3D.children.pop();o.traverse?.(x=>{if(x.geometry)x.geometry.dispose();if(x.material){if(Array.isArray(x.material))x.material.forEach(m=>m.dispose());else x.material.dispose()}})}
-  ARNODE=[];
-  const arr=lay(); if(!arr.length)return;
-  const min=Math.min(...arr.map(e=>e.x)),max=Math.max(...arr.map(e=>e.x)),depth=Math.max(...arr.map(e=>e.d),1);
-  const xGap=Math.min(.34,.72/Math.max(1,max-min)), yGap=Math.min(.31,.82/depth), r=Math.min(.075,.095/Math.sqrt(Math.max(1,arr.length/6)));
-  const pos={};arr.forEach(e=>{e.p3={x:(e.x-(min+max)/2)*xGap,y:.48-e.d*yGap,z:0};pos[e.n.id]=e});
-  // Các nhánh phát sáng, vẽ phía sau nút
-  const edgeMat=new THREE.MeshStandardMaterial({color:0x70e8f5,emissive:0x4725a8,emissiveIntensity:.75,metalness:.35,roughness:.25});
-  arr.forEach(e=>{if(e.p){const parent=pos[e.p.id];if(parent)AR3D.add(makeTube(e.p3,parent.p3,edgeMat,.012));}});
-  arr.forEach(e=>{
-    const state=nst(e.n.id), selected=isSel(e.n.id);
-    let color=state==='cur'?0xff72c6:state==='vis'?0x59e6c1:(e.d%2?0x9c7bff:0x46d8f0);
-    const sphere=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:state?0.45:.2,metalness:.25,roughness:.2}));
-    sphere.position.set(e.p3.x,e.p3.y,e.p3.z);sphere.userData={nodeId:e.n.id};AR3D.add(sphere);ARNODE.push(sphere);
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(r*(selected?1.34:1.12),selected?.008:.004,8,40),new THREE.MeshBasicMaterial({color:selected?0xffd86b:color}));
-    ring.position.copy(sphere.position);AR3D.add(ring);
-    const label=makeTextSprite(e.n.v);label.position.set(e.p3.x,e.p3.y,e.p3.z+r*.45);label.scale.set(r*1.65,r*.9,1);AR3D.add(label);
-    // Hạt sáng nhỏ tạo cảm giác hologram
-    const glow=new THREE.Mesh(new THREE.SphereGeometry(r*1.55,16,12),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.09,depthWrite:false}));glow.position.copy(sphere.position);AR3D.add(glow);
-  });
-  // Nhãn hướng trái/phải ở các nhánh của cây nhị phân
-  if(S.sub==='bin')arr.forEach(e=>{if(e.p){const parent=pos[e.p.id];const side=e.p.l===e.n?'TRÁI':'PHẢI';const mid={x:(e.p3.x+parent.p3.x)/2,y:(e.p3.y+parent.p3.y)/2,z:.015};const lab=makeTextSprite(side,side==='TRÁI'?'#73fff0':'#ff9bd8',34);lab.position.set(mid.x+(side==='TRÁI'?-.035:.035),mid.y,mid.z);lab.scale.set(.12,.045,1);AR3D.add(lab);}});
-}
-
 // ================= KHỞI ĐỘNG =================
 const stt=m=>$('#stt').textContent=m, load=m=>{const l=$('#load');l.style.display=m?'block':'none';l.innerHTML=m};
 try{initData();paint(0);ui();codeHtml()}catch(e){showErr('Lỗi khởi tạo: '+e.message)}
@@ -353,10 +310,11 @@ $('#bAR').onclick=async()=>{
     const {renderer,scene,camera}=mind,planes=[],anchors=[],locked=[false,false,false];let seen=false;
     scene.add(camera);                       // để vật gắn vào camera vẫn được vẽ
     [0].forEach(k=>{
-      const tree=new THREE.Group();tree.position.set(0,0,.02);tree.scale.setScalar(1.0);planes.push(tree);
-      const an=mind.addAnchor(k);an.group.add(tree);anchors[k]=an;
-      if(k===0)AR3D=tree;
-      an.onTargetFound=()=>{found[k]=true;load('');document.body.classList.remove('scan');if(!seen){seen=true;toast('🎯 Đã nhận ra ảnh mục tiêu — cây 3D đã xuất hiện')}};
+      TEX[k]=new THREE.CanvasTexture(CV[k]);TEX[k].colorSpace=THREE.SRGBColorSpace;
+      const p=new THREE.Mesh(new THREE.PlaneGeometry(1,H/W),new THREE.MeshBasicMaterial({map:TEX[k],transparent:true}));
+      p.position.z=.005;planes.push(p);
+      const an=mind.addAnchor(k);an.group.add(p);anchors[k]=an;
+      an.onTargetFound=()=>{found[k]=true;load('');document.body.classList.remove('scan');if(!seen){seen=true;toast('🎯 Đã nhận ra cây nhị phân')}};
       an.onTargetLost=()=>{found[k]=false};
     });
     lockFn=()=>{                              // khóa: gắn tấm cây vào camera, giữ nguyên vị trí hiện tại trên màn hình
@@ -371,7 +329,7 @@ $('#bAR').onclick=async()=>{
       }
       ui();
     };
-    ui();rebuild3DTree(0);
+    ui();
     const t=setTimeout(()=>showErr('Camera chưa bật sau 20 giây. Kiểm tra quyền camera của trình duyệt (biểu tượng ổ khóa cạnh thanh địa chỉ) rồi tải lại trang.'),20000);
     await mind.start();clearTimeout(t);load('');
     refresh();
@@ -380,8 +338,8 @@ $('#bAR').onclick=async()=>{
       if(e.target.closest('#top,#bar,#lockbtn,#start,#err'))return;
       const rc=renderer.domElement.getBoundingClientRect();
       v.set((e.clientX-rc.left)/rc.width*2-1,-((e.clientY-rc.top)/rc.height)*2+1);ray.setFromCamera(v,camera);
-      const hit=ray.intersectObjects(ARNODE,true).find(h=>h.object.userData&&h.object.userData.nodeId!=null);
-      if(hit){onNode(hit.object.userData.nodeId);ui();} 
+      const hit=ray.intersectObjects(planes.filter(p=>p.parent.visible))[0];
+      if(hit&&hit.uv)tapAt(planes.indexOf(hit.object),hit.uv.x*W,(1-hit.uv.y)*H);
     });
     renderer.setAnimationLoop(()=>renderer.render(scene,camera));
   }catch(err){
