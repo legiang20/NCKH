@@ -37,7 +37,7 @@ body.scan #lockbtn{display:none!important}
 body.scan #tabs,body.scan #code,body.scan #bar{display:none}
 #err{position:fixed;left:8px;right:8px;top:8px;z-index:20;background:#ff4d6d;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;display:none;white-space:pre-wrap}
 #load{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;background:#1b1230e6;padding:14px 22px;border-radius:18px;text-align:center;display:none;max-width:86vw}
-#toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;color:#5b3a6b;padding:10px 20px;border-radius:999px;font-weight:700;z-index:10;display:none}
+#toast{width:max-content;max-width:86vw;text-align:center;position:fixed;top:34%;left:50%;transform:translate(-50%,-50%);background:#fff;color:#5b3a6b;padding:10px 20px;border-radius:999px;font-weight:700;z-index:10;display:none}
 </style>
 <script>
 function showErr(m){var e=document.getElementById('err');if(e){e.style.display='block';e.textContent='⚠ '+m}console.error(m)}
@@ -70,7 +70,7 @@ let THREE,MindARThree,lockFn=null,isLocked=false;
 const $=s=>document.querySelector(s), W=850, H=728, NAMES=['Cây nhị phân'], DEF=['pre'];
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const TN={pre:'tiền tự (NLR)',in:'trung tự (LNR)',post:'hậu tự (LRN)',level:'theo mức (BFS)'};
-const toast=m=>{const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',1800)};
+const toast=m=>{const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',2600)};
 
 // ================= DỮ LIỆU =================
 let nid=1; const mk=v=>({id:nid++,v,l:null,r:null});
@@ -199,13 +199,15 @@ function setLesson(i){S.lesson=i;S.sel=null;clear();S.code=DEF[i];S.q=S.mode=='q
 
 function onNode(id){
   if(S.mode=='quiz'){if(S.q&&S.q.tap!=null&&!S.q.done&&id!=null)ans(id);return}
-  if(id==null){S.sel=null}
-  else S.sel=id;
-  refresh();
+  if(id==null)return;                         // chạm trượt → giữ nguyên lựa chọn
+  S.sel=S.sel===id?null:id;                    // chạm lại cùng nút = bỏ chọn
+  if(S.sel!=null)toast('✅ Đã chọn nút '+(find(id)||{}).v);
+  refresh();ui();
 }
 function tapAt(k,x,y){
   if(S.lesson!==k)setLesson(k);
-  const h=PS[k].find(p=>Math.hypot(p.x-x,p.y-y)<p.r*1.3);onNode(h?h.id:null);
+  let h=null,bd=1e9;PS[k].forEach(p=>{const d=Math.hypot(p.x-x,p.y-y);if(d<bd){bd=d;h=p}});
+  if(h&&bd>Math.max(h.r*2.8,90))h=null;onNode(h?h.id:null);
 }
 CV.forEach((c,k)=>c.onpointerdown=e=>{const r=c.getBoundingClientRect();tapAt(k,(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height)});
 
@@ -215,9 +217,10 @@ function edit(a){
   if(a=='del'){const n=find(S.sel);if(!n)return toast('Chạm chọn một nút trước');
     t.root=S.sub=='bst'?rmB(t.root,n.id,n.v):rmS(t.root,n.id);S.sel=null;clear();toast('Đã xóa nút '+n.v);return refresh()}
   if(a=='ins'){if(v==='')return toast('Nhập số cần chèn');play(bstIns(t,+v),'insert');return}
+  if(v!==''&&!Number.isFinite(+v))return toast('Giá trị không hợp lệ');
   const x=v!==''?+v:Math.max(0,...lay().map(e=>e.n.v))+1;
-  if(!t.root)t.root=mk(x);
-  else{const p=find(S.sel);if(!p)return toast('Chạm chọn nút cha trước');const s=a=='addl'?'l':'r';if(p[s])return toast('Vị trí đó đã có nút');p[s]=mk(x)}
+  if(!t.root){t.root=mk(x);toast('✅ Đã tạo gốc '+x)}
+  else{const p=find(S.sel);if(!p)return toast('👆 Hãy chạm vào một nút trên cây để chọn nút cha trước');const s=a=='addl'?'l':'r';if(p[s])return toast('Nút '+p.v+' đã có con '+(s=='l'?'trái':'phải')+' ('+p[s].v+')');p[s]=mk(x);toast('✅ Đã thêm '+x+' làm con '+(s=='l'?'trái':'phải')+' của nút '+p.v)}
   clear();refresh();
 }
 
@@ -248,7 +251,7 @@ function ui(){
   if(m=='sua'){
     if(L==0&&S.sub=='bin')h+=B('addl','＋ Trái')+B('addr','＋ Phải')+B('del','🗑️ Xóa nút');
     if(L==0&&S.sub=='bst')h+=B('ins','＋ Chèn')+B('del','🗑️ Xóa nút');
-    if(L==0)h+='<small>Chạm nút để chọn · nhập số rồi bấm</small>';
+    if(L==0){const sn=find(S.sel);h+=`<small>${sn?'✅ Đang chọn nút <b>'+sn.v+'</b>':'👆 Chạm một nút trên cây để chọn'} · nhập số rồi bấm</small>`}
   }
   if(m=='quiz'){const q=S.q;h+=`<small>Điểm ${S.sc[0]}/${S.sc[1]}</small>`;
     if(q&&q.msg)h+=`<div class="q">${q.msg}</div>`;
@@ -304,15 +307,15 @@ $('#bAR').onclick=async()=>{
     $('#start').style.display='none';document.body.classList.add('scan');
     load('📷 Đang bật camera...<br><small>Hãy bấm <b>Cho phép</b> khi trình duyệt hỏi quyền camera</small>');
     const mind=new MindARThree({container:$('#ar'),imageTargetSrc:'./targets.mind',maxTrack:1,uiLoading:'yes',uiScanning:'yes',uiError:'yes'});
-    const {renderer,scene,camera}=mind,planes=[],anchors=[],locked=[false,false,false];
+    const {renderer,scene,camera}=mind,planes=[],anchors=[],locked=[false,false,false];let seen=false;
     scene.add(camera);                       // để vật gắn vào camera vẫn được vẽ
     [0].forEach(k=>{
       TEX[k]=new THREE.CanvasTexture(CV[k]);TEX[k].colorSpace=THREE.SRGBColorSpace;
       const p=new THREE.Mesh(new THREE.PlaneGeometry(1,H/W),new THREE.MeshBasicMaterial({map:TEX[k],transparent:true}));
       p.position.z=.005;planes.push(p);
       const an=mind.addAnchor(k);an.group.add(p);anchors[k]=an;
-      an.onTargetFound=()=>{found[k]=true;load('');document.body.classList.remove('scan');if(S.lesson!==k)setLesson(k);else ui();toast('🎯 Đã nhận ra cây nhị phân')};
-      an.onTargetLost=()=>{found[k]=false;ui()};
+      an.onTargetFound=()=>{found[k]=true;load('');document.body.classList.remove('scan');if(!seen){seen=true;toast('🎯 Đã nhận ra cây nhị phân')}};
+      an.onTargetLost=()=>{found[k]=false};
     });
     lockFn=()=>{                              // khóa: gắn tấm cây vào camera, giữ nguyên vị trí hiện tại trên màn hình
       if(locked.some(Boolean)){
@@ -331,11 +334,12 @@ $('#bAR').onclick=async()=>{
     await mind.start();clearTimeout(t);load('');
     refresh();
     const ray=new THREE.Raycaster(),v=new THREE.Vector2();
-    renderer.domElement.addEventListener('pointerdown',e=>{
+    addEventListener('pointerdown',e=>{
+      if(e.target.closest('#top,#bar,#lockbtn,#start,#err'))return;
       const rc=renderer.domElement.getBoundingClientRect();
       v.set((e.clientX-rc.left)/rc.width*2-1,-((e.clientY-rc.top)/rc.height)*2+1);ray.setFromCamera(v,camera);
       const hit=ray.intersectObjects(planes.filter(p=>p.parent.visible))[0];
-      if(hit)tapAt(planes.indexOf(hit.object),hit.uv.x*W,(1-hit.uv.y)*H);
+      if(hit&&hit.uv)tapAt(planes.indexOf(hit.object),hit.uv.x*W,(1-hit.uv.y)*H);
     });
     renderer.setAnimationLoop(()=>renderer.render(scene,camera));
   }catch(err){
