@@ -37,6 +37,9 @@ body.scan #lockbtn{display:none!important}
 body.scan #tabs,body.scan #code,body.scan #bar{display:none}
 #err{position:fixed;left:8px;right:8px;top:8px;z-index:20;background:#ff4d6d;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;display:none;white-space:pre-wrap}
 #load{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;background:#1b1230e6;padding:14px 22px;border-radius:18px;text-align:center;display:none;max-width:86vw}
+#res{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:13px;margin-bottom:6px}
+#res i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+#res .rr{width:100%;color:#ffe98a;font-weight:600}
 #toast{width:max-content;max-width:86vw;text-align:center;position:fixed;top:34%;left:50%;transform:translate(-50%,-50%);background:#fff;color:#5b3a6b;padding:10px 20px;border-radius:999px;font-weight:700;z-index:10;display:none}
 </style>
 <script>
@@ -61,11 +64,11 @@ addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.me
 </div>
 <div id="top"><div id="tabs"></div><div id="code"></div></div>
 <button id="lockbtn" data-a="lock" title="Khóa / mở khóa cây"></button>
-<div id="bar"><input id="val" type="number" placeholder="giá trị"><div id="ctl"></div></div>
+<div id="bar"><div id="res"></div><input id="val" type="number" placeholder="giá trị"><div id="ctl"></div></div>
 <div id="toast"></div><div id="err"></div><div id="load"></div>
 
 <script type="module">
-let THREE,MindARThree,lockFn=null,isLocked=false;
+let THREE,MindARThree,lockFn=null,isLocked=false,rebuild3D=null;
 
 const $=s=>document.querySelector(s), W=850, H=728, NAMES=['Cây nhị phân'], DEF=['pre'];
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -189,7 +192,10 @@ function draw(g,k){
     if(k<2){g.fillStyle='#a98bff';g.font='bold 32px sans-serif';g.fillText('Kết quả: '+(s.out||[]).map(i=>lab(i,k)).join(' → '),36,H-36)}}
 }
 const paint=k=>{draw(CV[k].getContext('2d'),k);if(TEX[k])TEX[k].needsUpdate=true};
-function refresh(){paint(S.lesson);codeHtml()}
+const LEG=[['#ff4d8d','Gốc'],['#5b7cff','Nút trong'],['#27d7a1','Lá'],['#ffc72c','Đã duyệt'],['#ff6a00','Đang duyệt']];
+function upRes(){const s=cur();$('#res').innerHTML=LEG.map(([c,t])=>`<span><i style="background:${c}"></i>${t}</span>`).join('')+
+  `<div class="rr">${s?esc(s.note||'')+'<br><b>Kết quả: '+(s.out||[]).map(i=>lab(i,0)).join(' → ')+'</b>':'👆 Chạm vào nút để chọn · bấm Tiền/Trung/Hậu tự để duyệt'}</div>`}
+function refresh(){paint(S.lesson);codeHtml();upRes();if(rebuild3D)rebuild3D()}
 // ================= ĐIỀU KHIỂN =================
 function stop(){clearInterval(S.tm);S.tm=0}
 function play(steps,code){stop();S.steps=steps;S.i=0;S.code=code;
@@ -307,26 +313,63 @@ $('#bAR').onclick=async()=>{
     $('#start').style.display='none';document.body.classList.add('scan');
     load('📷 Đang bật camera...<br><small>Hãy bấm <b>Cho phép</b> khi trình duyệt hỏi quyền camera</small>');
     const mind=new MindARThree({container:$('#ar'),imageTargetSrc:'./targets.mind',maxTrack:1,uiLoading:'yes',uiScanning:'yes',uiError:'yes'});
-    const {renderer,scene,camera}=mind,planes=[],anchors=[],locked=[false,false,false];let seen=false;
-    scene.add(camera);                       // để vật gắn vào camera vẫn được vẽ
-    [0].forEach(k=>{
-      TEX[k]=new THREE.CanvasTexture(CV[k]);TEX[k].colorSpace=THREE.SRGBColorSpace;
-      const p=new THREE.Mesh(new THREE.PlaneGeometry(1,H/W),new THREE.MeshBasicMaterial({map:TEX[k],transparent:true}));
-      p.position.z=.005;planes.push(p);
-      const an=mind.addAnchor(k);an.group.add(p);anchors[k]=an;
-      an.onTargetFound=()=>{found[k]=true;load('');document.body.classList.remove('scan');if(!seen){seen=true;toast('🎯 Đã nhận ra cây nhị phân')}};
-      an.onTargetLost=()=>{found[k]=false};
-    });
-    lockFn=()=>{                              // khóa: gắn tấm cây vào camera, giữ nguyên vị trí hiện tại trên màn hình
-      if(locked.some(Boolean)){
-        planes.forEach((p,k)=>{if(locked[k]){anchors[k].group.add(p);p.position.set(0,0,.005);p.rotation.set(0,0,0);p.scale.set(1,1,1);locked[k]=false}});
-        isLocked=false;document.body.classList.remove('locked');toast('🔓 Đã mở khóa — cây bám theo ảnh trở lại');
-      }else{
-        scene.updateMatrixWorld(true);let c=0;
-        planes.forEach((p,k)=>{if(found[k]){camera.attach(p);locked[k]=true;c++}});
-        if(!c)return toast('Chưa quét thấy ảnh nào để khóa');
-        isLocked=true;document.body.classList.add('locked');toast('🔒 Đã khóa — di chuyển máy thoải mái');
-      }
+    const {renderer,scene,camera}=mind;let seen=false,locked=false;
+    scene.add(camera);                                   // để vật gắn vào camera (khi khóa) vẫn được vẽ
+    scene.add(new THREE.AmbientLight(0xffffff,.95));
+    const sun=new THREE.DirectionalLight(0xffffff,1.1);sun.position.set(.5,1,2);scene.add(sun);
+
+    // ---- tài nguyên dùng chung ----
+    const geoS=new THREE.SphereGeometry(1,28,20),geoC=new THREE.CylinderGeometry(1,1,1,10),mats={},tex={};
+    const hitMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
+    const mat=(c,em=0,op=1)=>mats[c+'|'+em+'|'+op]||(mats[c+'|'+em+'|'+op]=new THREE.MeshStandardMaterial({color:c,roughness:.3,metalness:.15,emissive:c,emissiveIntensity:em,transparent:op<1,opacity:op}));
+    const label=(text,w,h,col='#ffffff')=>{                // chữ/số luôn quay về phía camera
+      let t=tex[text+col];
+      if(!t){const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d');
+        g.font='bold 92px sans-serif';g.textAlign='center';g.textBaseline='middle';g.lineWidth=14;g.strokeStyle='#2b2350';g.strokeText(text,128,68);g.fillStyle=col;g.fillText(text,128,68);
+        t=tex[text+col]=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace}
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));sp.scale.set(w,h,1);sp.renderOrder=5;return sp};
+
+    // ---- nhóm: holder (gắn vào ảnh) → content (cây, phóng to 1.5×) + decor (đế, vòng sáng, tinh thể) ----
+    const holder=new THREE.Group(),content=new THREE.Group(),decor=new THREE.Group();
+    holder.add(decor,content);content.scale.setScalar(1.5);
+    const disc=new THREE.Mesh(new THREE.CylinderGeometry(.68,.68,.012,56),new THREE.MeshStandardMaterial({color:'#d9ccff',transparent:true,opacity:.35,roughness:.6}));disc.rotation.x=Math.PI/2;
+    decor.add(disc,new THREE.Mesh(new THREE.TorusGeometry(.68,.008,8,72),new THREE.MeshBasicMaterial({color:'#ff7fbf'})));
+    const sparks=[];
+    for(let i=0;i<18;i++){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.018+Math.random()*.014),mat(['#ffd166','#ff8fc7','#7de3ff','#b8f2e0'][i%4],.5)),an2=Math.random()*6.28,rr=.3+Math.random()*.4;
+      m.position.set(Math.cos(an2)*rr,Math.sin(an2)*rr*.85,.12+Math.random()*.4);m.userData.z=m.position.z;decor.add(m);sparks.push(m)}
+    const anchor=mind.addAnchor(0);anchor.group.add(holder);
+    anchor.onTargetFound=()=>{found[0]=true;load('');document.body.classList.remove('scan');if(!seen){seen=true;toast('🎯 Đã nhận ra cây nhị phân')}};
+    anchor.onTargetLost=()=>{found[0]=false};
+
+    // ---- dựng lại cây 3D mỗi khi dữ liệu / bước duyệt thay đổi ----
+    const hits=[];let dyn=[];
+    rebuild3D=()=>{
+      dyn.forEach(o=>{content.remove(o);if(o.isSprite)o.material.dispose()});dyn=[];hits.length=0;CK=0;
+      const add=o=>{content.add(o);dyn.push(o);return o},a=lay();
+      if(!a.length){const t=label('Cây rỗng',.5,.25);t.position.z=.05;add(t);return}
+      const xs=a.map(e=>e.x),mn=Math.min(...xs),mx=Math.max(...xs),md=Math.max(...a.map(e=>e.d)),m={};
+      const gx=Math.min(.28,.8/Math.max(mx-mn,1)),gy=Math.min(.2,.6/Math.max(md,1)),r=Math.min(.055,gx*.36);
+      a.forEach(e=>{e.X=(e.x-(mn+mx)/2)*gx;e.Y=md*gy/2-e.d*gy;m[e.n.id]=e});
+      const s=cur(),vis=s?(s.out||[]):[];
+      a.forEach(e=>{const p=e.p&&m[e.p.id];if(!p)return;                          // cạnh nối
+        const A=new THREE.Vector3(p.X,p.Y,0),B=new THREE.Vector3(e.X,e.Y,0),d=B.clone().sub(A),L=d.length(),on=vis.includes(e.n.id)&&vis.includes(p.n.id);
+        const c=new THREE.Mesh(geoC,mat(on?'#ffc72c':'#4a3f7a',on?.4:0));
+        c.scale.set(.009,L,.009);c.position.copy(A).add(B).multiplyScalar(.5);c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());add(c);
+        if(S.sub=='bin'&&!(p.n.l&&p.n.r)){const t=label(p.n.l?'trái':'phải',.1,.05,'#ffe98a');t.position.set((A.x+B.x)/2+.06,(A.y+B.y)/2,.03);add(t)}});
+      a.forEach(e=>{const n=e.n,st=nst(n.id),leaf=!n.l&&!n.r,sc=r*(st=='cur'?1.3:1);       // nút
+        const col=st=='cur'?'#ff6a00':st=='vis'?'#ffc72c':e.d==0?'#ff4d8d':leaf?'#27d7a1':'#5b7cff';
+        const b=new THREE.Mesh(geoS,mat(col,st=='cur'?.7:st=='vis'?.35:.12));b.scale.setScalar(sc);b.position.set(e.X,e.Y,0);add(b);
+        const t=label(String(n.v),sc*2.4,sc*1.2);t.position.set(e.X,e.Y,sc*1.05);add(t);
+        if(isSel(n.id)){const h=new THREE.Mesh(geoS,mat('#fff176',.8,.38));h.scale.setScalar(sc*1.45);h.position.copy(b.position);add(h)}
+        const hb=new THREE.Mesh(geoS,hitMat);hb.scale.setScalar(Math.max(sc*1.9,.07));hb.position.copy(b.position);hb.userData.id=n.id;add(hb);hits.push(hb)});
+    };
+
+    // ---- khóa: gắn cả cây vào camera, giữ nguyên chỗ đang hiện trên màn hình ----
+    lockFn=()=>{
+      if(locked){anchor.group.add(holder);holder.position.set(0,0,0);holder.rotation.set(0,0,0);holder.scale.set(1,1,1);locked=false;isLocked=false;
+        document.body.classList.remove('locked');toast('🔓 Đã mở khóa — cây bám theo ảnh trở lại')}
+      else{if(!found[0])return toast('Chưa quét thấy ảnh nào để khóa');scene.updateMatrixWorld(true);camera.attach(holder);locked=true;isLocked=true;
+        document.body.classList.add('locked');toast('🔒 Đã khóa — di chuyển máy thoải mái')}
       ui();
     };
     ui();
@@ -334,16 +377,20 @@ $('#bAR').onclick=async()=>{
     await mind.start();clearTimeout(t);load('');
     refresh();
     const ray=new THREE.Raycaster(),v=new THREE.Vector2();
-    addEventListener('pointerdown',e=>{
+    addEventListener('pointerdown',e=>{                    // chạm vào quả cầu (vùng chạm rộng hơn nút) → chọn nút
       if(e.target.closest('#top,#bar,#lockbtn,#start,#err'))return;
+      if(!holder.parent||!holder.parent.visible)return;
       const rc=renderer.domElement.getBoundingClientRect();
       v.set((e.clientX-rc.left)/rc.width*2-1,-((e.clientY-rc.top)/rc.height)*2+1);ray.setFromCamera(v,camera);
-      const hit=ray.intersectObjects(planes.filter(p=>p.parent.visible))[0];
-      if(hit&&hit.uv)tapAt(planes.indexOf(hit.object),hit.uv.x*W,(1-hit.uv.y)*H);
+      const hit=ray.intersectObjects(hits,false)[0];
+      if(hit)onNode(hit.object.userData.id);
     });
-    renderer.setAnimationLoop(()=>renderer.render(scene,camera));
+    renderer.setAnimationLoop(()=>{
+      const T=performance.now()/1000;content.position.z=.1+Math.sin(T*1.6)*.012;
+      sparks.forEach((m,i)=>{m.rotation.y=T*1.5+i;m.rotation.x=T+i;m.position.z=m.userData.z+Math.sin(T*1.2+i)*.03});
+      renderer.render(scene,camera)});
   }catch(err){
-    load('');document.body.classList.remove('scan','locked');lockFn=null;isLocked=false;ui();$('#start').style.display='flex';
+    load('');document.body.classList.remove('scan','locked');lockFn=null;isLocked=false;rebuild3D=null;ui();$('#start').style.display='flex';
     showErr(((err&&err.message)||err||'Camera bị từ chối hoặc không khả dụng')+'');
   }
 };
