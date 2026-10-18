@@ -54,12 +54,10 @@ addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.me
 <div id="ar"></div><div id="flat"></div>
 <div id="start">
   <h1>🌳 AR Cấu trúc dữ liệu</h1>
-  <p>Ảnh 1 = Cây nhị phân · Ảnh 2 = Đồ thị · Ảnh 3 = Ngăn xếp. Đưa camera vào ảnh đích, bài học tự chuyển theo ảnh.</p>
+  <p>Đưa camera vào ảnh cây nhị phân, cây AR sẽ hiện lên để bạn duyệt, thêm/xóa nút và làm trắc nghiệm.</p>
   <p id="stt">⏳ Đang khởi động...</p>
   <button id="bAR" class="on" disabled>📷 Bắt đầu AR</button>
   <button id="b2D">🖥️ Chế độ 2D (không cần camera)</button>
-  <p>Tải ảnh đích để in/ghép vào file .mind (đúng thứ tự: cây → đồ thị → ngăn xếp):</p>
-  <div><button data-a="img" data-i="1">⬇ Ảnh Đồ thị</button> <button data-a="img" data-i="2">⬇ Ảnh Ngăn xếp</button></div>
 </div>
 <div id="top"><div id="tabs"></div><div id="code"></div></div>
 <button id="lockbtn" data-a="lock" title="Khóa / mở khóa cây"></button>
@@ -69,21 +67,20 @@ addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.me
 <script type="module">
 let THREE,MindARThree,lockFn=null,isLocked=false;
 
-const $=s=>document.querySelector(s), W=850, H=728, NAMES=['Cây nhị phân','Đồ thị','Ngăn xếp'], DEF=['pre','bfs','push'];
+const $=s=>document.querySelector(s), W=850, H=728, NAMES=['Cây nhị phân'], DEF=['pre'];
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-const TN={pre:'tiền tự (NLR)',in:'trung tự (LNR)',post:'hậu tự (LRN)',level:'theo mức (BFS)',bfs:'BFS từ nút 1',dfs:'DFS từ nút 1'};
+const TN={pre:'tiền tự (NLR)',in:'trung tự (LNR)',post:'hậu tự (LRN)',level:'theo mức (BFS)'};
 const toast=m=>{const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',1800)};
 
 // ================= DỮ LIỆU =================
 let nid=1; const mk=v=>({id:nid++,v,l:null,r:null});
-let D,G; const S={lesson:0,mode:'duyet',sub:'bin',sel:null,steps:[],i:-1,code:'pre',lang:'gia',tm:0,q:null,sc:[0,0],showCode:true};
+let D; const S={lesson:0,mode:'duyet',sub:'bin',sel:null,steps:[],i:-1,code:'pre',lang:'gia',tm:0,q:null,sc:[0,0],showCode:true};
 const found=[false,false,false]; let flat=false, CK=0, PL=false, NV={};
 function initData(){
   nid=1; const a=[1,2,3,4,5,6].map(mk);               // cây mẫu giống ảnh đích
   a[0].l=a[1]; a[1].l=a[2]; a[1].r=a[3]; a[2].l=a[4]; a[2].r=a[5];
-  D={bin:{root:a[0]},bst:{root:null},st:[]};
+  D={bin:{root:a[0]},bst:{root:null}};
   [8,3,10,1,6,14,4].forEach(x=>bstIns(D.bst,x));
-  G={p:{1:[.2,.28],2:[.5,.2],3:[.8,.3],4:[.3,.72],5:[.58,.6],6:[.85,.76]},e:[[1,2],[1,4],[2,3],[2,5],[3,6],[4,5],[5,6]]};
 }
 const T=()=>D[S.sub];
 function lay(t=T()){   // cây thường: cha ở giữa các con (giống ảnh đích) · BST: trái→phải theo thứ tự giá trị
@@ -111,17 +108,6 @@ function tSteps(kind){
       else{P(2+i,n.id,'đi sang con '+(c=='l'?'trái':'phải'));n[c]?f(n[c]):P(1,n.id,'rỗng → quay lại')}})})(r);
   return s;
 }
-function gSteps(kind,s0){
-  const A={};Object.keys(G.p).forEach(i=>A[i]=[]);G.e.forEach(([a,b])=>{A[a].push(b);A[b].push(a)});
-  Object.values(A).forEach(a=>a.sort((x,y)=>x-y));
-  const s=[],out=[],vis=new Set([s0]),P=(l,c,note)=>s.push({l,cur:c,out:[...out],note});
-  if(kind=='bfs'){const q=[s0];P(1,s0,'q = ['+q+']');
-    while(q.length){const u=q.shift();P(3,u,'lấy '+u+' ra khỏi hàng đợi');out.push(u);P(4,u,'thăm '+u);
-      for(const v of A[u]){P(5,u,'xét đỉnh kề '+v);if(!vis.has(v)){P(6,u,v+' chưa thăm');vis.add(v);q.push(v);P(7,u,'thêm '+v+' → q = ['+q+']')}}}}
-  else (function d(u){P(0,u,'vào dfs('+u+')');vis.add(u);P(1,u,'đánh dấu '+u+' đã thăm');out.push(u);P(2,u,'thăm '+u);
-    for(const v of A[u]){P(3,u,'xét đỉnh kề '+v);if(!vis.has(v)){P(4,u,v+' chưa thăm → đi tiếp');d(v)}}})(s0);
-  return s;
-}
 function bstIns(t,x){  // chèn vào BST, trả về các bước so sánh
   const nn=mk(x),s=[],out=[],P=(l,c,note)=>s.push({l,cur:c,out:[...out],note});
   if(!t.root){P(1,null,'cây rỗng');P(2,nn.id,'tạo gốc '+x);t.root=nn;return s}
@@ -145,17 +131,11 @@ const CN={pre:'PreOrder',in:'InOrder',post:'PostOrder'};
 const CS={
  level:['void Bfs(Node root) {','  var q = new Queue<Node>(); q.Enqueue(root);','  while (q.Count > 0) {','    var n = q.Dequeue();','    Console.Write(n.Val + " ");','    foreach (var c in new[] { n.Left, n.Right }) if (c != null) q.Enqueue(c);','  }','}'],
  insert:['Node Insert(Node n, int x) {','  if (n == null)','    return new Node(x);','  if (x < n.Val)','    n.Left = Insert(n.Left, x);','  else if (x > n.Val)','    n.Right = Insert(n.Right, x);','  return n;','}'],
- bfs:['void Bfs(int s) {','  var q = new Queue<int>(); q.Enqueue(s); vis[s] = true;','  while (q.Count > 0) {','    int u = q.Dequeue();','    Console.Write(u + " ");','    foreach (int v in g[u])','      if (!vis[v]) {','        vis[v] = true; q.Enqueue(v);','      }','  }','}'],
- dfs:['void Dfs(int u) {','  vis[u] = true;','  Console.Write(u + " ");','  foreach (int v in g[u])','    if (!vis[v])','      Dfs(v);','}'],
- push:['void Push(int x) {','  st.Push(x);','}'],
- pop:['int Pop() {','  if (st.Count == 0) throw new InvalidOperationException();','  int x = st.Pop();','  return x;','}']};
+};
 const CPP={
  level:['void bfs(Node* root) {','  queue<Node*> q; q.push(root);','  while (!q.empty()) {','    Node* n = q.front(); q.pop();','    cout << n->val << " ";','    for (auto c : {n->left, n->right}) if (c) q.push(c);','  }','}'],
  insert:['Node* insert(Node* n, int x) {','  if (!n)','    return new Node(x);','  if (x < n->val)','    n->left = insert(n->left, x);','  else if (x > n->val)','    n->right = insert(n->right, x);','  return n;','}'],
- bfs:['void bfs(int s) {','  queue<int> q; q.push(s); vis[s] = true;','  while (!q.empty()) {','    int u = q.front(); q.pop();','    cout << u << " ";','    for (int v : g[u])','      if (!vis[v]) {','        vis[v] = true; q.push(v);','      }','  }','}'],
- dfs:['void dfs(int u) {','  vis[u] = true;','  cout << u << " ";','  for (int v : g[u])','    if (!vis[v])','      dfs(v);','}'],
- push:['void push(int x) {','  st.push(x);','}'],
- pop:['int pop() {','  if (st.empty()) throw runtime_error("rong");','  int x = st.top(); st.pop();','  return x;','}']};
+};
 function codeOf(k){
   if(FN[k]){const o={pre:'vlr',in:'lvr',post:'lrv'}[k],a={v:['THĂM n','print(n.val)','cout << n->val << " ";','Console.Write(n.Val + " ");'],l:['DUYỆT(n.trái)',FN[k]+'(n.left)',FN[k]+'(n->left);',CN[k]+'(n.Left);'],r:['DUYỆT(n.phải)',FN[k]+'(n.right)',FN[k]+'(n->right);',CN[k]+'(n.Right);']};
     return {gia:[k.toUpperCase()+'(n):','  nếu n rỗng: quay lại',...[...o].map(c=>'  '+a[c][0])],py:[`def ${FN[k]}(n):`,'  if n is None: return',...[...o].map(c=>'  '+a[c][1])],cpp:[`void ${FN[k]}(Node* n) {`,'  if (!n) return;',...[...o].map(c=>'  '+a[c][2]),'}'],cs:[`void ${CN[k]}(Node n) {`,'  if (n == null) return;',...[...o].map(c=>'  '+a[c][3]),'}']}}
@@ -164,12 +144,7 @@ function codeOf(k){
          py:['def bfs(root):','  q = [root]','  while q:','    n = q.pop(0)','    print(n.val)','    q += [c for c in (n.left, n.right) if c]']},
   insert:{gia:['CHÈN(n, x):','  nếu n rỗng:','    trả về nút mới x','  nếu x < n.giá_trị:','    n.trái ← CHÈN(n.trái, x)','  ngược lại nếu x > n.giá_trị:','    n.phải ← CHÈN(n.phải, x)','  trả về n'],
           py:['def insert(n, x):','  if n is None:','    return Node(x)','  if x < n.val:','    n.left = insert(n.left, x)','  elif x > n.val:','    n.right = insert(n.right, x)','  return n']},
-  bfs:{gia:['BFS(s):','  q ← [s]; đã_thăm ← {s}','  lặp khi q không rỗng:','    u ← lấy đầu q','    THĂM u','    với mỗi v kề u:','      nếu v chưa thăm:','        đánh dấu v; thêm v vào q'],
-       py:['def bfs(s):','  q = [s]; vis = {s}','  while q:','    u = q.pop(0)','    print(u)','    for v in g[u]:','      if v not in vis:','        vis.add(v); q.append(v)']},
-  dfs:{gia:['DFS(u):','  đánh dấu u đã thăm','  THĂM u','  với mỗi v kề u:','    nếu v chưa thăm:','      DFS(v)'],
-       py:['def dfs(u):','  vis.add(u)','  print(u)','  for v in g[u]:','    if v not in vis:','      dfs(v)']},
-  push:{gia:['ĐẨY(x):','  thêm x lên đỉnh'],py:['def push(x):','  st.append(x)']},
-  pop:{gia:['LẤY():','  nếu rỗng: báo lỗi','  trả về phần tử đỉnh và bỏ nó'],py:['def pop():','  if not st: raise IndexError','  return st.pop()']}}[k];
+}[k];
   return {...C,cpp:CPP[k],cs:CS[k]};
 }
 const cur=()=>PL||CK!==S.lesson?null:(S.steps[S.i]||null);
@@ -182,7 +157,7 @@ function codeHtml(){
 }
 
 // ================= VẼ (dùng chung cho AR texture và 2D) =================
-const CV=[0,1,2].map(()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c}), TEX=[], PS=[[],[],[]];
+const CV=[0].map(()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c}), TEX=[], PS=[[],[],[]];
 const nst=id=>{const s=cur();return s?s.cur===id?'cur':(s.out||[]).includes(id)?'vis':'':''};
 function node(g,x,y,r,t,st,sel){
   g.lineWidth=7;g.strokeStyle='#222';g.fillStyle=st=='cur'?'#ff8fc7':st=='vis'?'#b8f2e0':'#fff';
@@ -202,36 +177,19 @@ function dTree(g){
   if(S.sub=='bin'&&!PL)a.forEach(e=>{const p=e.p;if(p&&!(p.l&&p.r)){const q=m[p.id];g.fillStyle='#a98bff';g.font='bold 22px sans-serif';g.textAlign='left';g.fillText(p.l?'trái':'phải',(e.x+q.x)/2+10,(e.y+q.y)/2)}});
   a.forEach(e=>{node(g,e.x,e.y,r,e.n.v,nst(e.n.id),isSel(e.n.id));P.push({id:e.n.id,x:e.x,y:e.y,r})});
 }
-function dGraph(g){
-  const P=PS[1]=[],p=id=>({x:G.p[id][0]*W,y:G.p[id][1]*H});
-  G.e.forEach(([a,b])=>ln(g,p(a),p(b)));
-  Object.keys(G.p).forEach(i=>{const id=+i,q=p(id);node(g,q.x,q.y,34,id,nst(id),isSel(id));P.push({id,x:q.x,y:q.y,r:34})});
-}
-function dStack(g){
-  const s=PL?[4,2,7]:D.st,bw=260,bh=62,x=W/2-bw/2;
-  g.strokeStyle='#222';g.lineWidth=8;g.beginPath();g.moveTo(x-12,130);g.lineTo(x-12,H-110);g.lineTo(x+bw+12,H-110);g.lineTo(x+bw+12,130);g.stroke();
-  s.forEach((v,i)=>{const y=H-110-(bh+4)*(i+1),top=i==s.length-1;
-    g.fillStyle=top&&!PL?'#ff8fc7':'#ffe98a';g.strokeStyle='#222';g.lineWidth=5;g.beginPath();g.roundRect(x,y,bw,bh,12);g.fill();g.stroke();
-    g.fillStyle='#222';g.font='bold 36px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(v,W/2,y+bh/2+2);
-    if(top&&!PL){g.textAlign='left';g.fillText('← đỉnh',x+bw+30,y+bh/2)}});
-  if(!s.length){g.fillStyle='#9a7fab';g.font='34px sans-serif';g.textAlign='center';g.fillText('Ngăn xếp rỗng',W/2,H/2)}
-}
 function draw(g,k){
   CK=k;g.clearRect(0,0,W,H);
   g.fillStyle=PL?'#fff':'rgba(255,255,255,.95)';g.beginPath();g.roundRect(6,6,W-12,H-12,34);g.fill();
   g.strokeStyle=PL?'#222':'#ffd6ec';g.lineWidth=PL?14:10;g.stroke();
   g.fillStyle='#ff6fb5';g.font='bold 38px sans-serif';g.textAlign='left';g.textBaseline='middle';
   g.fillText(`Bài ${k+1}: ${NAMES[k]}${k==0&&S.sub=='bst'?' · BST':''}`,36,50);
-  [dTree,dGraph,dStack][k](g);
+  dTree(g);
   const s=cur();
   if(s){g.fillStyle='#5b3a6b';g.font='600 28px sans-serif';g.textAlign='left';g.fillText(s.note||'',36,96);
     if(k<2){g.fillStyle='#a98bff';g.font='bold 32px sans-serif';g.fillText('Kết quả: '+(s.out||[]).map(i=>lab(i,k)).join(' → '),36,H-36)}}
 }
 const paint=k=>{draw(CV[k].getContext('2d'),k);if(TEX[k])TEX[k].needsUpdate=true};
 function refresh(){paint(S.lesson);codeHtml()}
-function dl(k){PL=true;const c=document.createElement('canvas');c.width=W;c.height=H;const o=S.lesson;S.lesson=k;draw(c.getContext('2d'),k);S.lesson=o;PL=false;
-  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=['cay','dothi','ngxep'][k]+'.png';a.click()})}
-
 // ================= ĐIỀU KHIỂN =================
 function stop(){clearInterval(S.tm);S.tm=0}
 function play(steps,code){stop();S.steps=steps;S.i=0;S.code=code;
@@ -242,9 +200,6 @@ function setLesson(i){S.lesson=i;S.sel=null;clear();S.code=DEF[i];S.q=S.mode=='q
 function onNode(id){
   if(S.mode=='quiz'){if(S.q&&S.q.tap!=null&&!S.q.done&&id!=null)ans(id);return}
   if(id==null){S.sel=null}
-  else if(S.mode=='sua'&&S.lesson==1&&S.sel&&S.sel!==id){
-    const k=G.e.findIndex(([a,b])=>(a==S.sel&&b==id)||(a==id&&b==S.sel));
-    k>=0?G.e.splice(k,1):G.e.push([S.sel,id]);toast(k>=0?'Đã bỏ cạnh':'Đã nối cạnh');S.sel=null;clear()}
   else S.sel=id;
   refresh();
 }
@@ -256,11 +211,6 @@ CV.forEach((c,k)=>c.onpointerdown=e=>{const r=c.getBoundingClientRect();tapAt(k,
 
 function edit(a){
   const t=T(),v=$('#val').value.trim(),L=S.lesson;
-  if(L==2){
-    if(a=='push'){if(D.st.length>=7)return toast('Ngăn xếp đầy (tối đa 7)!');const x=v!==''?+v:1+Math.random()*9|0;D.st.push(x);play([{l:0,note:`gọi push(${x})`},{l:1,note:`thêm ${x} lên đỉnh`}],'push')}
-    if(a=='pop'){if(!D.st.length)return play([{l:0,note:'gọi pop()'},{l:1,note:'Rỗng → báo lỗi!'}],'pop');const x=D.st.pop();play([{l:0,note:'gọi pop()'},{l:1,note:'ngăn xếp không rỗng'},{l:2,note:`trả về ${x} và bỏ khỏi đỉnh`}],'pop')}
-    return;
-  }
   if(L!=0)return;
   if(a=='del'){const n=find(S.sel);if(!n)return toast('Chạm chọn một nút trước');
     t.root=S.sub=='bst'?rmB(t.root,n.id,n.v):rmS(t.root,n.id);S.sel=null;clear();toast('Đã xóa nút '+n.v);return refresh()}
@@ -274,10 +224,8 @@ function edit(a){
 // ---- trắc nghiệm ----
 function newQ(){
   const L=S.lesson,r=a=>a[Math.random()*a.length|0],sh=a=>[...a].sort(()=>Math.random()-.5);
-  if(L==2){const v=sh([1,2,3,4,5,6,7,8,9]).slice(0,4),p=1+(Math.random()*2|0),top=v[2-p];
-    return {q:`push ${v[0]}, push ${v[1]}, push ${v[2]}, rồi pop ${p} lần. Phần tử ở đỉnh là?`,opts:v.map(String),ans:v.indexOf(top)}}
   if(L==0&&lay().length<3)return {msg:'Cây cần ≥ 3 nút để làm trắc nghiệm — hãy thêm ở ✏️ Sửa.'};
-  const ks=L?['bfs','dfs']:['pre','in','post','level'],ord=k=>{const s=L?gSteps(k,1):tSteps(k);return s.length?s[s.length-1].out:[]},fmt=o=>o.map(i=>lab(i)).join(' ');
+  const ks=['pre','in','post','level'],ord=k=>{const s=tSteps(k);return s.length?s[s.length-1].out:[]},fmt=o=>o.map(i=>lab(i)).join(' ');
   const k=r(ks),o=ord(k);
   if(Math.random()<.35){const j=Math.random()*o.length|0;return {q:`👆 Chạm vào nút được thăm THỨ ${j+1} khi duyệt ${TN[k]}`,tap:o[j],kind:k}}
   const c=fmt(o),set=new Set(ks.map(x=>fmt(ord(x))));let n=0;while(set.size<4&&n++<40)set.add(fmt(sh(o)));
@@ -285,26 +233,22 @@ function newQ(){
   return {q:`Kết quả duyệt ${TN[k]} là gì?`,opts,ans:opts.indexOf(c),kind:k};
 }
 function ans(i){const q=S.q;if(!q||q.done)return;q.done=1;q.pick=i;q.right=q.opts?i==q.ans:i===q.tap;S.sc[0]+=q.right?1:0;S.sc[1]++;
-  if(q.kind)play(S.lesson?gSteps(q.kind,1):tSteps(q.kind),q.kind);ui();refresh()}
+  if(q.kind)play(tSteps(q.kind),q.kind);ui();refresh()}
 
 function ui(){
   const L=S.lesson,m=S.mode,B=(a,t,x='',c='')=>`<button class="${c}" data-a="${a}" ${x}>${t}</button>`;
-  $('#tabs').innerHTML=B('code',S.showCode?'▼ Code':'▶ Code','',S.showCode?'':'alt')+NAMES.map((n,i)=>B('les',`${i+1}. ${n.replace(' nhị phân','')}`,`data-i="${i}"`,(i==L?'on ':'')+(found[i]?'f':''))).join('')+B('rst','↺');
+  $('#tabs').innerHTML=B('code',S.showCode?'▼ Code':'▶ Code','',S.showCode?'':'alt')+B('rst','↺');
   const lb=$('#lockbtn');lb.style.display=lockFn?'block':'none';lb.textContent=isLocked?'🔓':'🔒';lb.className=isLocked?'on':'alt';
   let h='<div class="row">'+[['duyet','👀 Duyệt'],['sua','✏️ Sửa'],['quiz','🎓 Quiz']].map(([a,t])=>B('mode',t,`data-m="${a}"`,m==a?'on':'')).join('')+
     (L==0?B('sub',S.sub=='bin'?'🌳 Cây thường':'🔎 BST','','alt'):'')+'</div><div class="row">';
   if(m=='duyet'){
     if(L==0)h+=[['pre','Tiền tự'],['in','Trung tự'],['post','Hậu tự'],['level','Theo mức']].map(([k,t])=>B('alg',t,`data-k="${k}"`)).join('');
-    if(L==1)h+=B('alg','BFS','data-k="bfs"')+B('alg','DFS','data-k="dfs"')+'<small>Chạm nút để chọn điểm bắt đầu</small>';
-    if(L==2)h+='<small>Sang ✏️ Sửa để push / pop</small>';
-    if(L<2)h+=B('pv','◀')+B('pp','⏯')+B('nx','▶');
+    h+=B('pv','◀')+B('pp','⏯')+B('nx','▶');
   }
   if(m=='sua'){
     if(L==0&&S.sub=='bin')h+=B('addl','＋ Trái')+B('addr','＋ Phải')+B('del','🗑️ Xóa nút');
     if(L==0&&S.sub=='bst')h+=B('ins','＋ Chèn')+B('del','🗑️ Xóa nút');
     if(L==0)h+='<small>Chạm nút để chọn · nhập số rồi bấm</small>';
-    if(L==1)h+='<small>Chạm nút A rồi nút B để nối / bỏ cạnh</small>';
-    if(L==2)h+=B('push','Push')+B('pop','Pop')+'<small>(ô số trống = ngẫu nhiên)</small>';
   }
   if(m=='quiz'){const q=S.q;h+=`<small>Điểm ${S.sc[0]}/${S.sc[1]}</small>`;
     if(q&&q.msg)h+=`<div class="q">${q.msg}</div>`;
@@ -318,7 +262,7 @@ document.addEventListener('click',e=>{
   if(a=='les')setLesson(+d.i);
   else if(a=='mode'){S.mode=d.m;S.sel=null;S.q=d.m=='quiz'?newQ():null;ui();refresh()}
   else if(a=='sub'){S.sub=S.sub=='bin'?'bst':'bin';S.sel=null;clear();S.code='pre';ui();refresh()}
-  else if(a=='alg')play(L?gSteps(d.k,S.sel||1):tSteps(d.k),d.k);
+  else if(a=='alg')play(tSteps(d.k),d.k);
   else if(a=='pv'||a=='nx'){stop();S.i=Math.max(0,Math.min(S.steps.length-1,S.i+(a=='nx'?1:-1)));refresh()}
   else if(a=='pp'){if(S.tm)stop();else if(S.steps.length){if(S.i>=S.steps.length-1)S.i=0;play(S.steps,S.code)}}
   else if(a=='opt')ans(+d.i);
@@ -326,14 +270,13 @@ document.addEventListener('click',e=>{
   else if(a=='py'){S.lang=d.v;codeHtml()}
   else if(a=='code'){S.showCode=!S.showCode;ui();codeHtml()}
   else if(a=='rst'){const m=S.mode;initData();setLesson(L);S.mode=m;toast('Đã đặt lại dữ liệu mẫu')}
-  else if(a=='img')dl(+d.i);
   else if(a=='lock'&&lockFn)lockFn();
   else{edit(a);ui()}
 });
 
 // ================= KHỞI ĐỘNG =================
 const stt=m=>$('#stt').textContent=m, load=m=>{const l=$('#load');l.style.display=m?'block':'none';l.innerHTML=m};
-try{initData();[0,1,2].forEach(paint);ui();codeHtml()}catch(e){showErr('Lỗi khởi tạo: '+e.message)}
+try{initData();paint(0);ui();codeHtml()}catch(e){showErr('Lỗi khởi tạo: '+e.message)}
 function start2D(){flat=true;$('#start').style.display='none';load('');$('#flat').style.display='flex';$('#flat').replaceChildren(CV[S.lesson]);refresh()}
 $('#b2D').onclick=start2D;
 
@@ -360,15 +303,15 @@ $('#bAR').onclick=async()=>{
 
     $('#start').style.display='none';document.body.classList.add('scan');
     load('📷 Đang bật camera...<br><small>Hãy bấm <b>Cho phép</b> khi trình duyệt hỏi quyền camera</small>');
-    const mind=new MindARThree({container:$('#ar'),imageTargetSrc:'./targets.mind',maxTrack:3,uiLoading:'yes',uiScanning:'yes',uiError:'yes'});
+    const mind=new MindARThree({container:$('#ar'),imageTargetSrc:'./targets.mind',maxTrack:1,uiLoading:'yes',uiScanning:'yes',uiError:'yes'});
     const {renderer,scene,camera}=mind,planes=[],anchors=[],locked=[false,false,false];
     scene.add(camera);                       // để vật gắn vào camera vẫn được vẽ
-    [0,1,2].forEach(k=>{
+    [0].forEach(k=>{
       TEX[k]=new THREE.CanvasTexture(CV[k]);TEX[k].colorSpace=THREE.SRGBColorSpace;
       const p=new THREE.Mesh(new THREE.PlaneGeometry(1,H/W),new THREE.MeshBasicMaterial({map:TEX[k],transparent:true}));
       p.position.z=.005;planes.push(p);
       const an=mind.addAnchor(k);an.group.add(p);anchors[k]=an;
-      an.onTargetFound=()=>{found[k]=true;load('');document.body.classList.remove('scan');if(S.lesson!==k)setLesson(k);else ui();toast('🎯 Thấy ảnh '+(k+1)+': '+NAMES[k])};
+      an.onTargetFound=()=>{found[k]=true;load('');document.body.classList.remove('scan');if(S.lesson!==k)setLesson(k);else ui();toast('🎯 Đã nhận ra cây nhị phân')};
       an.onTargetLost=()=>{found[k]=false;ui()};
     });
     lockFn=()=>{                              // khóa: gắn tấm cây vào camera, giữ nguyên vị trí hiện tại trên màn hình
