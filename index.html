@@ -70,22 +70,48 @@ addEventListener('unhandledrejection',function(e){showErr((e.reason&&e.reason.me
 <script type="module">
 let THREE,MindARThree,lockFn=null,isLocked=false,rebuild3D=null;
 
-const $=s=>document.querySelector(s), W=850, H=728, NAMES=['Cây nhị phân'], DEF=['pre'];
+// ======================================================================================
+//  CẤU HÌNH ẢNH ĐÍCH — mỗi dòng = 1 ảnh trong targets.mind (đúng THỨ TỰ khi biên dịch .mind)
+//    name : tên bài hiển thị
+//    tree : chuỗi 'giá trị(trái,phải)', con rỗng để trống  →  '1(2(3(5,6),4),)'
+//           hoặc mảng số → chèn lần lượt vào cây tìm kiếm nhị phân (BST)  →  [8,3,10,1,6,14]
+//    algos: (tùy chọn) các cách duyệt được bật, mặc định cả 4: 'pre' 'in' 'post' 'level'
+//  Muốn thêm ảnh: biên dịch lại .mind rồi thêm 1 dòng vào đây. Phần còn lại dùng chung.
+// ======================================================================================
+const TARGETS=[
+  {name:'Cây nhị phân', tree:'1(2(3(5,6),4),)'},
+  // {name:'BST mẫu',       tree:[8,3,10,1,6,14,4]},
+  // {name:'Cây lệch phải', tree:'1(,2(,3))', algos:['pre','in','post']},
+];
+const SAMPLE={bin:'1(2(3(5,6),4),)',bst:[8,3,10,1,6,14,4]};   // cây mẫu cho nút đổi kiểu 🌳/🔎
+const ALGO_NAME={pre:'Tiền tự',in:'Trung tự',post:'Hậu tự',level:'Theo mức'};
+const algosOf=i=>TARGETS[i].algos||Object.keys(ALGO_NAME);
+
+const $=s=>document.querySelector(s), W=850, H=728, NAMES=TARGETS.map(t=>t.name);
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const TN={pre:'tiền tự (NLR)',in:'trung tự (LNR)',post:'hậu tự (LRN)',level:'theo mức (BFS)'};
 const toast=m=>{const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t.h);t.h=setTimeout(()=>t.style.display='none',2600)};
 
 // ================= DỮ LIỆU =================
 let nid=1; const mk=v=>({id:nid++,v,l:null,r:null});
-let D; const S={lesson:0,mode:'duyet',sub:'bin',sel:null,steps:[],i:-1,code:'pre',lang:'gia',tm:0,q:null,sc:[0,0],showCode:true};
-const found=[false,false,false]; let flat=false, CK=0, PL=false, NV={};
-function initData(){
-  nid=1; const a=[1,2,3,4,5,6].map(mk);               // cây mẫu giống ảnh đích
-  a[0].l=a[1]; a[1].l=a[2]; a[1].r=a[3]; a[2].l=a[4]; a[2].r=a[5];
-  D={bin:{root:a[0]},bst:{root:null}};
-  [8,3,10,1,6,14,4].forEach(x=>bstIns(D.bst,x));
+let DS; const S={lesson:0,mode:'duyet',sub:'bin',sel:null,steps:[],i:-1,code:'pre',lang:'gia',tm:0,q:null,sc:[0,0],showCode:true};
+const found=[]; let flat=false, CK=0, PL=false, NV={};
+function parseTree(str){                                   // 'v(trái,phải)'  ví dụ 1(2(3(5,6),4),)
+  let i=0;
+  const num=()=>{const m=/^-?\d+/.exec(str.slice(i));if(!m)return null;i+=m[0].length;return +m[0]};
+  const node=()=>{const v=num();if(v===null)return null;const n=mk(v);
+    if(str[i]=='('){i++;n.l=node();if(str[i]==',')i++;n.r=node();if(str[i]==')')i++}
+    return n};
+  return node();
 }
-const T=()=>D[S.sub];
+function buildTarget(i){                                   // dựng dữ liệu cho ảnh đích thứ i
+  const own=TARGETS[i].tree,d={sub:Array.isArray(own)?'bst':'bin',bin:{root:null},bst:{root:null}};
+  const put=(spec,reset)=>{if(Array.isArray(spec)){if(reset)d.bst.root=null;spec.forEach(x=>bstIns(d.bst,x))}else d.bin.root=parseTree(spec)};
+  put(SAMPLE.bin);put(SAMPLE.bst);put(own,true);           // mẫu cho cả hai kiểu, rồi ghi đè bằng cây của ảnh này
+  return d;
+}
+function initData(){nid=1;DS=TARGETS.map((_,i)=>buildTarget(i))}
+const T=()=>DS[S.lesson][S.sub];
 function lay(t=T()){   // cây thường: cha ở giữa các con (giống ảnh đích) · BST: trái→phải theo thứ tự giá trị
   const a=[];NV={};let sl=0;const bin=S.sub=='bin';
   const f=(n,d,p)=>{if(!n)return null;const e={n,d,p,x:0};a.push(e);NV[n.id]=n.v;
@@ -95,7 +121,7 @@ function lay(t=T()){   // cây thường: cha ở giữa các con (giống ảnh
   f(t.root,0,null);return a;
 }
 const find=id=>lay().find(e=>e.n.id===id)?.n;
-const lab=(id,L=S.lesson)=>L?id:(NV[id]??id);
+const lab=id=>NV[id]??id;
 
 // ================= THUẬT TOÁN → DANH SÁCH BƯỚC {l: dòng code, cur, out, note} =================
 function tSteps(kind){
@@ -160,7 +186,7 @@ function codeHtml(){
 }
 
 // ================= VẼ (dùng chung cho AR texture và 2D) =================
-const CV=[0].map(()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c}), TEX=[], PS=[[],[],[]];
+const CV=TARGETS.map(()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c}), TEX=[], PS=TARGETS.map(()=>[]);
 const nst=id=>{const s=cur();return s?s.cur===id?'cur':(s.out||[]).includes(id)?'vis':'':''};
 function node(g,x,y,r,t,st,sel){
   g.lineWidth=7;g.strokeStyle='#222';g.fillStyle=st=='cur'?'#ff8fc7':st=='vis'?'#b8f2e0':'#fff';
@@ -171,7 +197,7 @@ function node(g,x,y,r,t,st,sel){
 const ln=(g,a,b)=>{g.strokeStyle='#222';g.lineWidth=5;g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke()};
 const isSel=id=>!PL&&CK===S.lesson&&S.sel===id;
 function dTree(g){
-  const a=lay(),P=PS[0]=[];
+  const a=lay(),P=PS[S.lesson]=[];
   if(!a.length){g.fillStyle='#9a7fab';g.font='40px sans-serif';g.textAlign='center';g.fillText('Cây rỗng — vào ✏️ Sửa để thêm nút',W/2,H/2);return}
   const xs=a.map(e=>e.x),mn=Math.min(...xs),mx=Math.max(...xs),md=Math.max(...a.map(e=>e.d));
   const gx=Math.min(210,(W-140)/Math.max(mx-mn,1)),gy=Math.min(142,(H-300)/Math.max(md,1)),r=Math.min(34,gx*.42),m={};
@@ -185,7 +211,7 @@ function draw(g,k){
   g.fillStyle=PL?'#fff':'rgba(255,255,255,.95)';g.beginPath();g.roundRect(6,6,W-12,H-12,34);g.fill();
   g.strokeStyle=PL?'#222':'#ffd6ec';g.lineWidth=PL?14:10;g.stroke();
   g.fillStyle='#ff6fb5';g.font='bold 38px sans-serif';g.textAlign='left';g.textBaseline='middle';
-  g.fillText(`Bài ${k+1}: ${NAMES[k]}${k==0&&S.sub=='bst'?' · BST':''}`,36,50);
+  g.fillText(`Bài ${k+1}: ${NAMES[k]}${S.sub=='bst'?' · BST':''}`,36,50);
   dTree(g);
   const s=cur();
   if(s){g.fillStyle='#5b3a6b';g.font='600 28px sans-serif';g.textAlign='left';g.fillText(s.note||'',36,96);
@@ -201,7 +227,7 @@ function stop(){clearInterval(S.tm);S.tm=0}
 function play(steps,code){stop();S.steps=steps;S.i=0;S.code=code;
   if(steps.length>1)S.tm=setInterval(()=>{if(S.i<S.steps.length-1){S.i++}else stop();refresh()},1000);refresh()}
 function clear(){stop();S.steps=[];S.i=-1}
-function setLesson(i){S.lesson=i;S.sel=null;clear();S.code=DEF[i];S.q=S.mode=='quiz'?newQ():null;if(flat)$('#flat').replaceChildren(CV[i]);ui();refresh()}
+function setLesson(i){S.lesson=i;S.sub=DS[i].sub;S.sel=null;clear();S.code='pre';S.q=S.mode=='quiz'?newQ():null;if(flat)$('#flat').replaceChildren(CV[i]);ui();refresh()}
 
 function onNode(id){
   if(S.mode=='quiz'){if(S.q&&S.q.tap!=null&&!S.q.done&&id!=null)ans(id);return}
@@ -219,7 +245,6 @@ CV.forEach((c,k)=>c.onpointerdown=e=>{const r=c.getBoundingClientRect();tapAt(k,
 
 function edit(a){
   const t=T(),v=$('#val').value.trim(),L=S.lesson;
-  if(L!=0)return;
   if(a=='del'){const n=find(S.sel);if(!n)return toast('Chạm chọn một nút trước');
     t.root=S.sub=='bst'?rmB(t.root,n.id,n.v):rmS(t.root,n.id);S.sel=null;clear();toast('Đã xóa nút '+n.v);return refresh()}
   if(a=='ins'){if(v==='')return toast('Nhập số cần chèn');play(bstIns(t,+v),'insert');return}
@@ -233,8 +258,8 @@ function edit(a){
 // ---- trắc nghiệm ----
 function newQ(){
   const L=S.lesson,r=a=>a[Math.random()*a.length|0],sh=a=>[...a].sort(()=>Math.random()-.5);
-  if(L==0&&lay().length<3)return {msg:'Cây cần ≥ 3 nút để làm trắc nghiệm — hãy thêm ở ✏️ Sửa.'};
-  const ks=['pre','in','post','level'],ord=k=>{const s=tSteps(k);return s.length?s[s.length-1].out:[]},fmt=o=>o.map(i=>lab(i)).join(' ');
+  if(lay().length<3)return {msg:'Cây cần ≥ 3 nút để làm trắc nghiệm — hãy thêm ở ✏️ Sửa.'};
+  const ks=algosOf(L),ord=k=>{const s=tSteps(k);return s.length?s[s.length-1].out:[]},fmt=o=>o.map(i=>lab(i)).join(' ');
   const k=r(ks),o=ord(k);
   if(Math.random()<.35){const j=Math.random()*o.length|0;return {q:`👆 Chạm vào nút được thăm THỨ ${j+1} khi duyệt ${TN[k]}`,tap:o[j],kind:k}}
   const c=fmt(o),set=new Set(ks.map(x=>fmt(ord(x))));let n=0;while(set.size<4&&n++<40)set.add(fmt(sh(o)));
@@ -246,31 +271,31 @@ function ans(i){const q=S.q;if(!q||q.done)return;q.done=1;q.pick=i;q.right=q.opt
 
 function ui(){
   const L=S.lesson,m=S.mode,B=(a,t,x='',c='')=>`<button class="${c}" data-a="${a}" ${x}>${t}</button>`;
-  $('#tabs').innerHTML=B('code',S.showCode?'▼ Code':'▶ Code','',S.showCode?'':'alt')+B('rst','↺');
+  $('#tabs').innerHTML=B('code',S.showCode?'▼ Code':'▶ Code','',S.showCode?'':'alt')+(TARGETS.length>1?NAMES.map((n,i)=>B('les',`${i+1}. ${n}`,`data-i="${i}"`,(i==L?'on ':'')+(found[i]?'f':''))).join(''):'')+B('rst','↺');
   const lb=$('#lockbtn');lb.style.display=lockFn?'block':'none';lb.textContent=isLocked?'🔓':'🔒';lb.className=isLocked?'on':'alt';
   let h='<div class="row">'+[['duyet','👀 Duyệt'],['sua','✏️ Sửa'],['quiz','🎓 Quiz']].map(([a,t])=>B('mode',t,`data-m="${a}"`,m==a?'on':'')).join('')+
-    (L==0?B('sub',S.sub=='bin'?'🌳 Cây thường':'🔎 BST','','alt'):'')+'</div><div class="row">';
+    B('sub',S.sub=='bin'?'🌳 Cây thường':'🔎 BST','','alt')+'</div><div class="row">';
   if(m=='duyet'){
-    if(L==0)h+=[['pre','Tiền tự'],['in','Trung tự'],['post','Hậu tự'],['level','Theo mức']].map(([k,t])=>B('alg',t,`data-k="${k}"`)).join('');
+    h+=algosOf(L).map(k=>B('alg',ALGO_NAME[k],`data-k="${k}"`)).join('');
     h+=B('pv','◀')+B('pp','⏯')+B('nx','▶');
   }
   if(m=='sua'){
-    if(L==0&&S.sub=='bin')h+=B('addl','＋ Trái')+B('addr','＋ Phải')+B('del','🗑️ Xóa nút');
-    if(L==0&&S.sub=='bst')h+=B('ins','＋ Chèn')+B('del','🗑️ Xóa nút');
-    if(L==0){const sn=find(S.sel);h+=`<small>${sn?'✅ Đang chọn nút <b>'+sn.v+'</b>':'👆 Chạm một nút trên cây để chọn'} · nhập số rồi bấm</small>`}
+    if(S.sub=='bin')h+=B('addl','＋ Trái')+B('addr','＋ Phải')+B('del','🗑️ Xóa nút');
+    if(S.sub=='bst')h+=B('ins','＋ Chèn')+B('del','🗑️ Xóa nút');
+    {const sn=find(S.sel);h+=`<small>${sn?'✅ Đang chọn nút <b>'+sn.v+'</b>':'👆 Chạm một nút trên cây để chọn'} · nhập số rồi bấm</small>`}
   }
   if(m=='quiz'){const q=S.q;h+=`<small>Điểm ${S.sc[0]}/${S.sc[1]}</small>`;
     if(q&&q.msg)h+=`<div class="q">${q.msg}</div>`;
     else if(q){h+=`<div class="q">${q.q}</div>`+(q.opts?q.opts.map((o,i)=>`<button class="opt ${q.done?(i==q.ans?'ok':i==q.pick?'bad':''):''}" data-a="opt" data-i="${i}">${esc(o)}</button>`).join(''):'')+
       (q.done?`<div class="q">${q.right?'✅ Chính xác!':'❌ Chưa đúng — xem animation giải thích.'}</div>`+B('nq','Câu tiếp ▶','','on'):'')}}
   $('#ctl').innerHTML=h+'</div>';
-  $('#val').style.display=m=='sua'&&L!=1?'':'none';
+  $('#val').style.display=m=='sua'?'':'none';
 }
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;const d=b.dataset,a=d.a,L=S.lesson;
   if(a=='les')setLesson(+d.i);
   else if(a=='mode'){S.mode=d.m;S.sel=null;S.q=d.m=='quiz'?newQ():null;ui();refresh()}
-  else if(a=='sub'){S.sub=S.sub=='bin'?'bst':'bin';S.sel=null;clear();S.code='pre';ui();refresh()}
+  else if(a=='sub'){S.sub=S.sub=='bin'?'bst':'bin';DS[L].sub=S.sub;S.sel=null;clear();S.code='pre';ui();refresh()}
   else if(a=='alg')play(tSteps(d.k),d.k);
   else if(a=='pv'||a=='nx'){stop();S.i=Math.max(0,Math.min(S.steps.length-1,S.i+(a=='nx'?1:-1)));refresh()}
   else if(a=='pp'){if(S.tm)stop();else if(S.steps.length){if(S.i>=S.steps.length-1)S.i=0;play(S.steps,S.code)}}
@@ -278,14 +303,14 @@ document.addEventListener('click',e=>{
   else if(a=='nq'){S.q=newQ();clear();ui();refresh()}
   else if(a=='py'){S.lang=d.v;codeHtml()}
   else if(a=='code'){S.showCode=!S.showCode;ui();codeHtml()}
-  else if(a=='rst'){const m=S.mode;initData();setLesson(L);S.mode=m;toast('Đã đặt lại dữ liệu mẫu')}
+  else if(a=='rst'){const m=S.mode;DS[L]=buildTarget(L);setLesson(L);S.mode=m;toast('Đã đặt lại cây của ảnh này')}
   else if(a=='lock'&&lockFn)lockFn();
   else{edit(a);ui()}
 });
 
 // ================= KHỞI ĐỘNG =================
 const stt=m=>$('#stt').textContent=m, load=m=>{const l=$('#load');l.style.display=m?'block':'none';l.innerHTML=m};
-try{initData();paint(0);ui();codeHtml()}catch(e){showErr('Lỗi khởi tạo: '+e.message)}
+try{initData();S.sub=DS[0].sub;refresh();ui()}catch(e){showErr('Lỗi khởi tạo: '+e.message)}
 function start2D(){flat=true;$('#start').style.display='none';load('');$('#flat').style.display='flex';$('#flat').replaceChildren(CV[S.lesson]);refresh()}
 $('#b2D').onclick=start2D;
 
@@ -313,12 +338,13 @@ $('#bAR').onclick=async()=>{
     $('#start').style.display='none';document.body.classList.add('scan');
     load('📷 Đang bật camera...<br><small>Hãy bấm <b>Cho phép</b> khi trình duyệt hỏi quyền camera</small>');
     const mind=new MindARThree({container:$('#ar'),imageTargetSrc:'./targets.mind',maxTrack:1,uiLoading:'yes',uiScanning:'yes',uiError:'yes'});
-    const {renderer,scene,camera}=mind;let seen=false,locked=false;
+    const {renderer,scene,camera}=mind,SCALE=1.5;        // SCALE: độ to của cây AR so với ảnh đích
+    let lastSeen=-1,lockedIdx=-1;
     scene.add(camera);                                   // để vật gắn vào camera (khi khóa) vẫn được vẽ
     scene.add(new THREE.AmbientLight(0xffffff,.95));
     const sun=new THREE.DirectionalLight(0xffffff,1.1);sun.position.set(.5,1,2);scene.add(sun);
 
-    // ---- tài nguyên dùng chung ----
+    // ---- tài nguyên dùng chung cho mọi ảnh đích ----
     const geoS=new THREE.SphereGeometry(1,28,20),geoC=new THREE.CylinderGeometry(1,1,1,10),mats={},tex={};
     const hitMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
     const mat=(c,em=0,op=1)=>mats[c+'|'+em+'|'+op]||(mats[c+'|'+em+'|'+op]=new THREE.MeshStandardMaterial({color:c,roughness:.3,metalness:.15,emissive:c,emissiveIntensity:em,transparent:op<1,opacity:op}));
@@ -329,23 +355,28 @@ $('#bAR').onclick=async()=>{
         t=tex[text+col]=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace}
       const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));sp.scale.set(w,h,1);sp.renderOrder=5;return sp};
 
-    // ---- nhóm: holder (gắn vào ảnh) → content (cây, phóng to 1.5×) + decor (đế, vòng sáng, tinh thể) ----
-    const holder=new THREE.Group(),content=new THREE.Group(),decor=new THREE.Group();
-    holder.add(decor,content);content.scale.setScalar(1.5);
-    const disc=new THREE.Mesh(new THREE.CylinderGeometry(.68,.68,.012,56),new THREE.MeshStandardMaterial({color:'#d9ccff',transparent:true,opacity:.35,roughness:.6}));disc.rotation.x=Math.PI/2;
-    decor.add(disc,new THREE.Mesh(new THREE.TorusGeometry(.68,.008,8,72),new THREE.MeshBasicMaterial({color:'#ff7fbf'})));
-    const sparks=[];
-    for(let i=0;i<18;i++){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.018+Math.random()*.014),mat(['#ffd166','#ff8fc7','#7de3ff','#b8f2e0'][i%4],.5)),an2=Math.random()*6.28,rr=.3+Math.random()*.4;
-      m.position.set(Math.cos(an2)*rr,Math.sin(an2)*rr*.85,.12+Math.random()*.4);m.userData.z=m.position.z;decor.add(m);sparks.push(m)}
-    const anchor=mind.addAnchor(0);anchor.group.add(holder);
-    anchor.onTargetFound=()=>{found[0]=true;load('');document.body.classList.remove('scan');if(!seen){seen=true;toast('🎯 Đã nhận ra cây nhị phân')}};
-    anchor.onTargetLost=()=>{found[0]=false};
+    // ---- mỗi ảnh đích i có holder riêng: đế + vòng sáng + tinh thể + cây (content) ----
+    const HG=TARGETS.map((tg,i)=>{
+      const holder=new THREE.Group(),content=new THREE.Group(),decor=new THREE.Group();
+      holder.add(decor,content);content.scale.setScalar(SCALE);
+      const disc=new THREE.Mesh(new THREE.CylinderGeometry(.68,.68,.012,56),new THREE.MeshStandardMaterial({color:'#d9ccff',transparent:true,opacity:.35,roughness:.6}));disc.rotation.x=Math.PI/2;
+      decor.add(disc,new THREE.Mesh(new THREE.TorusGeometry(.68,.008,8,72),new THREE.MeshBasicMaterial({color:'#ff7fbf'})));
+      const sparks=[];
+      for(let k=0;k<18;k++){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.018+Math.random()*.014),mat(['#ffd166','#ff8fc7','#7de3ff','#b8f2e0'][k%4],.5)),an2=Math.random()*6.28,rr=.3+Math.random()*.4;
+        m.position.set(Math.cos(an2)*rr,Math.sin(an2)*rr*.85,.12+Math.random()*.4);m.userData.z=m.position.z;decor.add(m);sparks.push(m)}
+      const anchor=mind.addAnchor(i);anchor.group.add(holder);
+      anchor.onTargetFound=()=>{found[i]=true;load('');document.body.classList.remove('scan');
+        if(lockedIdx<0&&S.lesson!==i)setLesson(i);               // thấy ảnh nào → chuyển sang bài của ảnh đó
+        if(lastSeen!==i){lastSeen=i;toast('🎯 Đã nhận ra: '+tg.name)}};
+      anchor.onTargetLost=()=>{found[i]=false};
+      return {holder,content,anchor,sparks,hits:[],dyn:[]};
+    });
 
-    // ---- dựng lại cây 3D mỗi khi dữ liệu / bước duyệt thay đổi ----
-    const hits=[];let dyn=[];
+    // ---- dựng lại cây 3D của ảnh đang dùng mỗi khi dữ liệu / bước duyệt thay đổi ----
     rebuild3D=()=>{
-      dyn.forEach(o=>{content.remove(o);if(o.isSprite)o.material.dispose()});dyn=[];hits.length=0;CK=0;
-      const add=o=>{content.add(o);dyn.push(o);return o},a=lay();
+      const G=HG[S.lesson],content=G.content,hits=G.hits;
+      G.dyn.forEach(o=>{content.remove(o);if(o.isSprite)o.material.dispose()});G.dyn=[];hits.length=0;CK=S.lesson;
+      const add=o=>{content.add(o);G.dyn.push(o);return o},a=lay();
       if(!a.length){const t=label('Cây rỗng',.5,.25);t.position.z=.05;add(t);return}
       const xs=a.map(e=>e.x),mn=Math.min(...xs),mx=Math.max(...xs),md=Math.max(...a.map(e=>e.d)),m={};
       const gx=Math.min(.28,.8/Math.max(mx-mn,1)),gy=Math.min(.2,.6/Math.max(md,1)),r=Math.min(.055,gx*.36);
@@ -364,12 +395,12 @@ $('#bAR').onclick=async()=>{
         const hb=new THREE.Mesh(geoS,hitMat);hb.scale.setScalar(Math.max(sc*1.9,.07));hb.position.copy(b.position);hb.userData.id=n.id;add(hb);hits.push(hb)});
     };
 
-    // ---- khóa: gắn cả cây vào camera, giữ nguyên chỗ đang hiện trên màn hình ----
+    // ---- khóa: gắn cả cây (của ảnh đang dùng) vào camera, giữ nguyên chỗ đang hiện trên màn hình ----
     lockFn=()=>{
-      if(locked){anchor.group.add(holder);holder.position.set(0,0,0);holder.rotation.set(0,0,0);holder.scale.set(1,1,1);locked=false;isLocked=false;
-        document.body.classList.remove('locked');toast('🔓 Đã mở khóa — cây bám theo ảnh trở lại')}
-      else{if(!found[0])return toast('Chưa quét thấy ảnh nào để khóa');scene.updateMatrixWorld(true);camera.attach(holder);locked=true;isLocked=true;
-        document.body.classList.add('locked');toast('🔒 Đã khóa — di chuyển máy thoải mái')}
+      if(lockedIdx>=0){const G=HG[lockedIdx];G.anchor.group.add(G.holder);G.holder.position.set(0,0,0);G.holder.rotation.set(0,0,0);G.holder.scale.set(1,1,1);
+        lockedIdx=-1;isLocked=false;document.body.classList.remove('locked');toast('🔓 Đã mở khóa — cây bám theo ảnh trở lại')}
+      else{const i=S.lesson;if(!found[i])return toast('Chưa quét thấy ảnh nào để khóa');scene.updateMatrixWorld(true);camera.attach(HG[i].holder);
+        lockedIdx=i;isLocked=true;document.body.classList.add('locked');toast('🔒 Đã khóa — di chuyển máy thoải mái')}
       ui();
     };
     ui();
@@ -379,15 +410,16 @@ $('#bAR').onclick=async()=>{
     const ray=new THREE.Raycaster(),v=new THREE.Vector2();
     addEventListener('pointerdown',e=>{                    // chạm vào quả cầu (vùng chạm rộng hơn nút) → chọn nút
       if(e.target.closest('#top,#bar,#lockbtn,#start,#err'))return;
-      if(!holder.parent||!holder.parent.visible)return;
+      const G=HG[S.lesson];if(!G.holder.parent||!G.holder.parent.visible)return;
       const rc=renderer.domElement.getBoundingClientRect();
       v.set((e.clientX-rc.left)/rc.width*2-1,-((e.clientY-rc.top)/rc.height)*2+1);ray.setFromCamera(v,camera);
-      const hit=ray.intersectObjects(hits,false)[0];
+      const hit=ray.intersectObjects(G.hits,false)[0];
       if(hit)onNode(hit.object.userData.id);
     });
     renderer.setAnimationLoop(()=>{
-      const T=performance.now()/1000;content.position.z=.1+Math.sin(T*1.6)*.012;
-      sparks.forEach((m,i)=>{m.rotation.y=T*1.5+i;m.rotation.x=T+i;m.position.z=m.userData.z+Math.sin(T*1.2+i)*.03});
+      const T=performance.now()/1000;
+      HG.forEach(G=>{G.content.position.z=.1+Math.sin(T*1.6)*.012;
+        G.sparks.forEach((m,i)=>{m.rotation.y=T*1.5+i;m.rotation.x=T+i;m.position.z=m.userData.z+Math.sin(T*1.2+i)*.03})});
       renderer.render(scene,camera)});
   }catch(err){
     load('');document.body.classList.remove('scan','locked');lockFn=null;isLocked=false;rebuild3D=null;ui();$('#start').style.display='flex';
