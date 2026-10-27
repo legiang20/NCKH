@@ -236,7 +236,8 @@ function ui(){
   $('#les').value=S.lesson;$('#vw').value=S.view;
   document.querySelectorAll('[data-op]').forEach(x=>x.style.display=L.ops.split(' ').includes(x.dataset.op)?'':'none');
   $('#bAna').style.display=L.ops.includes('ana')?'':'none';
-  // Bài 6 cũng có đủ 4 kiểu duyệt, bao gồm duyệt ngược (Reverse inorder), như các bài khác.\n  const ks=KS;if(!ks.some(k=>k[0]==S.kind))S.kind='in';
+  // Bài 6 cũng có đủ 4 kiểu duyệt, bao gồm duyệt ngược (Reverse inorder), như các bài khác.
+  const ks=KS;if(!ks.some(k=>k[0]==S.kind))S.kind='in';
   $('#tk').innerHTML=ks.map(k=>`<option value="${k[0]}" ${k[0]==S.kind?'selected':''}>${k[1]}</option>`).join('');
   $('#tt').textContent=st&&st.t=='path'?'ĐƯỜNG ĐI':'MÔ PHỎNG';$('#bPlay').textContent=S.run?'⏸':'▶';if(GM.on)$('#tt').textContent='🎮 TRÒ CHƠI';gUI();
   const ids=st?st.out:[];$('#out').innerHTML=ids.map((id,j)=>`<span class="${st.cur==id&&j==ids.length-1?'cu':''}">${esc(trunc(disp(byId(id))))}</span>`).join('')||'<small style="opacity:.6;font-weight:400">Kết quả sẽ hiện ở đây</small>';
