@@ -77,7 +77,7 @@ body.cfm #tools,body.cfm #trav,body.cfm #info,body.cfm #code,body.cfm #modes,bod
 @media(max-width:760px){
  #top>span:not(.sp){display:none}#vw{max-width:36vw}
  #top{font-size:12px;gap:6px;padding:6px 8px}button,select{padding:6px 9px;min-height:40px}
- #bSet,#bHelp{display:none}#bMore{display:inline-block}
+ #bMore{display:inline-block}
  #info{width:150px;padding:8px 10px}#info div{font-size:12px}
  #tools{flex-direction:row;overflow-x:auto;overflow-y:hidden;width:auto;right:8px;bottom:var(--tb,120px);max-height:none}#tools button{white-space:nowrap}
  #trav{left:8px}
@@ -94,8 +94,8 @@ body.cfm #tools,body.cfm #trav,body.cfm #info,body.cfm #code,body.cfm #modes,bod
 #info h4{padding-right:32px}
 #info>.cx{top:4px;right:5px}
 /* nút 📐 Đo thông số trên thanh trên: hết chỗ thì chỉ còn biểu tượng, hết nữa thì nằm trong ⋯ */
-#bAna.ic .tx{display:none}#bAna.ic{padding:6px 10px}#bAna.nf{display:none}
-@media(max-width:760px){#top{gap:4px}#top .sp{display:none}#vw{margin-left:auto;max-width:106px;text-overflow:ellipsis}#top>button,#top>select{padding:6px 7px}#bAna.ic{padding:6px 8px}#info{width:178px}#info h4{font-size:13px;white-space:nowrap}#info>.cx{min-width:30px;min-height:30px}}
+#top .ic .tx{display:none}#top .nf{display:none!important}
+@media(max-width:760px){#top{gap:4px}#top .sp{display:none}#vw{width:106px;max-width:none;flex:1 1 106px;text-overflow:ellipsis}#top>button{flex:1 1 auto}#top>#bMore{flex:none}#top>button,#top>select{padding:6px 7px}#top>button.ic{padding:6px 8px}#info{width:178px}#info h4{font-size:13px;white-space:nowrap}#info>.cx{min-width:30px;min-height:30px}}
 
 /* ===== Giao diện sáng (bật trong ⚙ Cài đặt; mặc định là tối) ===== */
 :root[data-theme="dark"]{color-scheme:dark}
@@ -290,7 +290,7 @@ X.orig=()=>sure('Khôi phục cây quét ban đầu','Mọi thay đổi (thêm /
 $('#bSet').onclick=()=>modal('Cài đặt',`<label>Giao diện</label><select id="sth"><option value="dark" ${TH.m=='dark'?'selected':''}>Tối (mặc định)</option><option value="light" ${TH.m=='light'?'selected':''}>Sáng</option></select><label>Độ sáng hiệu ứng</label><input id="sb" type="range" min=".4" max="2" step=".1" value="${S.bright}"><label><input id="sn" type="checkbox" style="width:auto" ${S.snd?'checked':''}> Âm thanh tương tác</label><label><input id="sg" type="checkbox" style="width:auto" ${S.notes?'checked':''}> Hiện ghi chú hướng dẫn (bong bóng gợi ý)</label>`);
 $('#bHelp').onclick=()=>modal('Trợ giúp',`<button class="bt or" data-x="tour">↺ Xem lại hướng dẫn 3 bước</button><p><span class="hand">👆</span> Chạm một nút để xem thông tin. Thanh trên có 3 chế độ: <b>🔎 Khám phá</b> (xem và sửa cây), <b>🚶 Duyệt cây</b> (xem từng bước kèm code), <b>🎮 Trò chơi</b>. Nút trên thanh trên đổi cách kéo 1 ngón: <b>⟳ Xoay cây</b> (kéo để xoay 3D) hoặc <b>✋ Kéo nút</b> (kéo từng nút; kéo chỗ trống để dời cả cây).<br>Hai ngón: chụm để thu/phóng, vặn để xoay cây.<br>📌 Cây tự cố định ngay khi bạn xác nhận quét đúng. Muốn đổi cây: bấm 🔍 Quét lại. Giữ lâu một nút bất kỳ để xem ghi chú tác dụng.</p><p><b style="color:#fab005">●</b> Nút gốc &nbsp;<b style="color:#4dabf7">●</b> Nút trong (nhánh) &nbsp;<b style="color:#40c057">●</b> Nút lá<br><b style="color:#ff6b35">●</b> Đang duyệt &nbsp;<b style="color:#ffd43b">●</b> Đã duyệt &nbsp;<b style="color:#fa5252">●</b> Không tìm thấy</p>`);
 // nút ⋯ trên màn hình hẹp: gom Cài đặt / Trợ giúp / Đo thông số
-$('#bMore').onclick=()=>modal('Thêm','<button class="bt" data-x="mSet">⚙ Cài đặt</button><button class="bt" data-x="mHelp">? Trợ giúp</button>'+(S.mode=='kham'&&root?'<button class="bt" data-x="mAna">📐 Đo thông số</button>':''));
+$('#bMore').onclick=()=>{const nf=q=>$(q).classList.contains('nf');modal('Thêm',(nf('#bSet')?'<button class="bt" data-x="mSet">⚙ Cài đặt</button>':'')+(nf('#bHelp')?'<button class="bt" data-x="mHelp">? Trợ giúp</button>':'')+(nf('#bAna')&&S.mode=='kham'&&root?'<button class="bt" data-x="mAna">📐 Đo thông số</button>':''))};
 X.mSet=()=>{close();$('#bSet').click()};X.mHelp=()=>{close();$('#bHelp').click()};X.mAna=()=>{close();OP.ana()};
 document.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>OP[b.dataset.op]());
 $('#bAna').onclick=OP.ana;
@@ -322,10 +322,15 @@ function tour(){const el=$('#coach');document.querySelectorAll('.hl').forEach(x=
   if(TR.i>=TS.length){TR.off=1;try{localStorage.setItem('arbt_tour','1')}catch(e){}el.style.display='none';toast('🎉 Xong hướng dẫn! Bấm ? để xem lại');return}
   const c=TS[TR.i];$('#ct').innerHTML=c.t;el.style.display='flex';if(c.sel){const t=$(c.sel);t&&t.classList.add('hl')}}
 $('#cs').onclick=()=>{TR.off=1;try{localStorage.setItem('arbt_tour','1')}catch(e){}tour()};
-function fitTop(){const a=$('#bAna'),t=$('#top');a.classList.remove('ic','nf');
-  if(!matchMedia('(max-width:760px)').matches||a.hidden||getComputedStyle(a).display=='none')return;
+function fitTop(){const t=$('#top'),A=[$('#bAna'),$('#bSet'),$('#bHelp')],mo=$('#bMore');
+  [...A,mo].forEach(b=>b.classList.remove('ic','nf'));
+  if(!matchMedia('(max-width:760px)').matches)return;
   const wr=()=>{const k=[...t.children].filter(e=>e.offsetParent);if(k.length<2)return false;const c=e=>e.offsetTop+e.offsetHeight/2,y=c(k[0]);return k.some(e=>Math.abs(c(e)-y)>12)};
-  if(wr()){a.classList.add('ic');if(wr())a.classList.add('nf')}}
+  A.forEach(b=>b.classList.add('nf'));                       // bắt đầu: tất cả nằm trong ⋯, rồi đưa ra ngoài nếu còn chỗ
+  let full=true;                                              // hết chỗ ở nút nào thì các nút sau cũng nằm trong ⋯ (đúng thứ tự ưu tiên)
+  A.forEach((b,i)=>{if(b.hidden)return;if(!full)return;b.classList.remove('nf');if(i>0)b.classList.add('ic');   // 📐 thử cả chữ; ⚙ và ? chỉ biểu tượng
+    if(wr()){b.classList.add('ic');if(wr()){b.classList.add('nf');full=false}}});
+  if(A.every(b=>!b.classList.contains('nf'))){mo.classList.add('nf');if(wr())mo.classList.remove('nf')}}   // ra hết thì bỏ nút ⋯
 addEventListener('resize',()=>{try{ui()}catch(e){}});
 function ui(){
   const sc=document.body.classList.contains('scan'),st=S.steps[S.i];
