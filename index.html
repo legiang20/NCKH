@@ -90,6 +90,10 @@ body.cfm #tools,body.cfm #trav,body.cfm #info,body.cfm #code,body.cfm #modes,bod
 /* thanh công cụ khi thu gọn: chỉ còn nút biểu tượng + mũi tên, không còn thanh đen */
 #tools.cl{right:auto!important;background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0!important;overflow:visible}
 #tools.cl>.cx.tgl{background:var(--g);border:1px solid var(--l);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+/* khung "Mô phỏng" khi thu gọn: chỉ còn một nút mũi tên đủ lớn để bấm mở lại (giống thanh công cụ) */
+#trav.cl{background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0!important;overflow:visible}
+#trav.cl>.cx{position:static;display:block;min-width:56px;min-height:40px;padding:6px 14px;font-size:18px;line-height:1.35;border-radius:10px;background:var(--g);border:1px solid var(--l);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+[data-theme="light"] #trav.cl>.cx{background:#dbe4ff}
 /* "Thông tin nút": chừa chỗ cho mũi tên để không che chữ */
 #info h4{padding-right:32px}
 #info>.cx{top:4px;right:5px}
@@ -659,7 +663,7 @@ async function loadLibs(){try{THREE=await import('three');stt('✅ Sẵn sàng')
 loadLibs();
 const cxMk=()=>['#tools','#trav','#info','#code'].forEach(q=>{const p=$(q);if(p&&!p.querySelector(':scope>.cx')){const b=document.createElement('button');b.className='cx';b.textContent=p.classList.contains('cl')?'▸':'▾';b.title='Ẩn / hiện khung này';p.prepend(b)}});
 ['#tools','#trav','#info','#code'].forEach(q=>new MutationObserver(cxMk).observe($(q),{childList:true}));cxMk();
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.cx');if(!b)return;const p=b.parentElement;p.classList.toggle('cl');if(b.classList.contains('tgl'))ui();else b.textContent=p.classList.contains('cl')?'▸':'▾'});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.cx');if(!b)return;const p=b.parentElement;p.classList.toggle('cl');if(b.classList.contains('tgl')){ui()}else{b.textContent=p.classList.contains('cl')?'▸':'▾';ui()}});
 
 // giữ lâu (≥0.5s) một nút để xem ghi chú tác dụng — không kích hoạt nút đó
 (()=>{let t=0,fired=null;const clr=()=>clearTimeout(t);
