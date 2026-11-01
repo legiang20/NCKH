@@ -173,31 +173,36 @@ X.qagain=()=>startQuiz();
 
 // ---- hộp chọn chế độ, thành tích, luật chơi ----
 function rdCfg(){if(!$('#cf_s'))return;const c=QX.cfg,ar=q=>[...document.querySelectorAll(q)].map(x=>x.value);c.src=$('#cf_s').value;c.type=$('#cf_t').value;c.lv=+$('#cf_l').value;c.n=Math.max(3,Math.min(15,+$('#cf_n').value||7));c.tps=ar('.cf_tp:checked');c.tys=ar('.cf_ty:checked');c.cnt=+$('#cf_c').value;c.comp=$('#cf_k').checked?1:0;c.name=$('#cf_u').value.trim().slice(0,16)||'Học sinh'}
-$('#mbd').addEventListener('change',()=>rdCfg());
+var HUBO={cf:0,tp:0,ty:0,md:1};   // nhớ mục nào đang mở
+function hubCnt(){[['cf_tp','hc_tp'],['cf_ty','hc_ty']].forEach(([c,i])=>{const e=$('#'+i);if(e)e.textContent=document.querySelectorAll('.'+c+':checked').length+'/'+document.querySelectorAll('.'+c).length})}
+$('#mbd').addEventListener('change',()=>{rdCfg();hubCnt()});
+$('#mbd').addEventListener('toggle',e=>{const k=e.target&&e.target.dataset&&e.target.dataset.k;if(k)HUBO[k]=e.target.open},true);
 function hub(){chAbort();const c=QX.cfg,op=(a,v)=>a.map(([k,t])=>'<option value="'+k+'"'+(k==v?' selected':'')+'>'+t+'</option>').join(''),
-  ck=(cl,v,t,on)=>'<label style="margin:6px 0;opacity:1"><input type="checkbox" class="'+cl+'" value="'+v+'"'+(on?' checked':'')+' style="width:auto"> '+t+'</label>',
-  bt=(x,t,d,cls)=>'<button class="bt'+(cls?' '+cls:'')+'" data-x="'+x+'">'+t+(d?'<br><small style="opacity:.75;font-weight:400">'+d+'</small>':'')+'</button>',
-  hd=t=>'<h4 style="margin:16px 0 4px;letter-spacing:.5px">'+t+'</h4>';
+  ck=(cl,v,t,on)=>'<label style="margin:4px 0;opacity:1;font-weight:600"><input type="checkbox" class="'+cl+'" value="'+v+'"'+(on?' checked':'')+' style="width:auto"> '+t+'</label>',
+  bt=(x,t,d)=>'<button class="bt" data-x="'+x+'">'+t+(d?'<br><small style="opacity:.7;font-weight:400">'+d+'</small>':'')+'</button>',
+  sec=(k,t,badge,body)=>'<details data-k="'+k+'"'+(HUBO[k]?' open':'')+' style="margin:0 0 8px;border:1px solid var(--l);border-radius:12px;background:#ffffff0f"><summary style="padding:10px 12px;cursor:pointer;font-weight:800;letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center"><span>'+t+'</span>'+(badge||'')+'</summary><div style="padding:0 12px 10px">'+body+'</div></details>';
   modal('🎮 Trò chơi & Luyện tập',
-  '<label>Nguồn cây</label><select id="cf_s">'+op([['cur','Cây hiện tại (đang quét / chỉnh sửa)'],['rnd','Cây ngẫu nhiên']],c.src)+'</select>'+
-  '<label>Loại cây ngẫu nhiên</label><select id="cf_t">'+op([['auto','Tự động theo cấp độ'],['nor','Nhị phân thường'],['bst','Cây tìm kiếm nhị phân (BST)'],['bal','Cây cân bằng'],['left','Cây lệch trái'],['right','Cây lệch phải'],['khuyet','Cây khuyết']],c.type)+'</select>'+
-  '<label>Cấp độ</label><select id="cf_l">'+op([[1,'1 – Dễ (5–7 nút)'],[2,'2 – Trung bình (8–12 nút)'],[3,'3 – Khó (cây lệch / khuyết)'],[0,'Tùy chỉnh']],c.lv)+'</select>'+
-  '<label>Tùy chỉnh: số nút (3–15)</label><input id="cf_n" type="number" min="3" max="15" value="'+c.n+'">'+
-  '<label>Số câu (Luyện tập / Thử thách thời gian)</label><select id="cf_c">'+op([[5,'5 câu'],[10,'10 câu'],[15,'15 câu'],[20,'20 câu']],c.cnt)+'</select>'+
-  '<label><input type="checkbox" id="cf_k"'+(c.comp?' checked':'')+' style="width:auto"> Chế độ thi đấu (lưu bảng xếp hạng)</label><input id="cf_u" type="text" maxlength="16" placeholder="Tên của bạn" value="'+esc(c.name=='Học sinh'?'':c.name)+'">'+
-  '<hr style="opacity:.2">'+
-  hd('CHỦ ĐỀ')+'<small>Chọn chủ đề muốn ôn (dùng cho Luyện tập và Thử thách thời gian)</small>'+TOP.map(([k,t])=>ck('cf_tp',k,t,c.tps.includes(k))).join('')+
-  hd('DẠNG CÂU HỎI')+'<small>Chọn dạng câu hỏi muốn làm</small>'+TYP.map(([k,t])=>ck('cf_ty',k,t,c.tys.includes(k))).join('')+
-  hd('CHẾ ĐỘ CHƠI')+
-  bt('mPrac','📖 Luyện tập','Làm bài theo chủ đề và dạng câu hỏi đã chọn, có gợi ý','or')+
-  bt('mTime','⏱ Thử thách thời gian','Mỗi câu có đồng hồ đếm ngược','or')+
-  bt('mFix','🛠 Sửa cây bị lỗi','Đổi chỗ khoá để cây trở lại là BST')+
-  bt('mNext','👣 Đoán nút tiếp theo','Chạm nút được thăm tiếp theo')+
-  bt('mHunt','🔍 Truy tìm nút','Săn nút theo đặc điểm, đi tìm khoá')+
-  bt('mMix','🏆 Thử thách tổng hợp','Trộn ngẫu nhiên mọi trò, sai 3 lần là thua')+
-  hd('TRẢI NGHIỆM TOÀN DIỆN')+
-  bt('mAll','🌟 Bắt đầu trải nghiệm toàn diện','4 chặng liên tiếp: Luyện tập (đủ chủ đề, đủ dạng) → Đoán nút → Truy tìm nút → Sửa cây lỗi','or')+
-  '<hr style="opacity:.2"><button class="bt" data-x="hs2">🏅 Thành tích & xếp hạng</button><button class="bt" data-x="hr">❓ Luật chơi</button>')}
+  sec('cf','⚙ THIẾT LẬP CÂY & SỐ CÂU','',
+    '<label>Nguồn cây</label><select id="cf_s">'+op([['cur','Cây hiện tại (đang quét / chỉnh sửa)'],['rnd','Cây ngẫu nhiên']],c.src)+'</select>'+
+    '<label>Loại cây ngẫu nhiên</label><select id="cf_t">'+op([['auto','Tự động theo cấp độ'],['nor','Nhị phân thường'],['bst','Cây tìm kiếm nhị phân (BST)'],['bal','Cây cân bằng'],['left','Cây lệch trái'],['right','Cây lệch phải'],['khuyet','Cây khuyết']],c.type)+'</select>'+
+    '<label>Cấp độ</label><select id="cf_l">'+op([[1,'1 – Dễ (5–7 nút)'],[2,'2 – Trung bình (8–12 nút)'],[3,'3 – Khó (cây lệch / khuyết)'],[0,'Tùy chỉnh']],c.lv)+'</select>'+
+    '<label>Tùy chỉnh: số nút (3–15)</label><input id="cf_n" type="number" min="3" max="15" value="'+c.n+'">'+
+    '<label>Số câu (Luyện tập / Thử thách thời gian)</label><select id="cf_c">'+op([[5,'5 câu'],[10,'10 câu'],[15,'15 câu'],[20,'20 câu']],c.cnt)+'</select>'+
+    '<label><input type="checkbox" id="cf_k"'+(c.comp?' checked':'')+' style="width:auto"> Chế độ thi đấu (lưu bảng xếp hạng)</label><input id="cf_u" type="text" maxlength="16" placeholder="Tên của bạn" value="'+esc(c.name=='Học sinh'?'':c.name)+'">')+
+  sec('tp','CHỦ ĐỀ','<small id="hc_tp" style="font-weight:600;opacity:.75;margin-left:auto;margin-right:6px">'+c.tps.length+'/'+TOP.length+'</small>',
+    TOP.map(([k,t])=>ck('cf_tp',k,t,c.tps.includes(k))).join(''))+
+  sec('ty','DẠNG CÂU HỎI','<small id="hc_ty" style="font-weight:600;opacity:.75;margin-left:auto;margin-right:6px">'+c.tys.length+'/'+TYP.length+'</small>',
+    TYP.map(([k,t])=>ck('cf_ty',k,t,c.tys.includes(k))).join(''))+
+  sec('md','CHẾ ĐỘ CHƠI','',
+    bt('mPrac','📖 Luyện tập','Làm bài theo chủ đề và dạng câu hỏi đã chọn')+
+    bt('mTime','⏱ Thử thách thời gian','Mỗi câu có đồng hồ đếm ngược')+
+    bt('mFix','🛠 Sửa cây bị lỗi','Đổi chỗ khoá để cây trở lại là BST')+
+    bt('mNext','👣 Đoán nút tiếp theo','Chạm nút được thăm tiếp theo')+
+    bt('mHunt','🔍 Truy tìm nút','Săn nút theo đặc điểm, đi tìm khoá')+
+    bt('mMix','🏆 Thử thách tổng hợp','Trộn ngẫu nhiên mọi trò, sai 3 lần là thua'))+
+  '<div style="font-weight:800;letter-spacing:.4px;margin:12px 0 2px">TRẢI NGHIỆM TOÀN DIỆN</div>'+
+  bt('mAll','🌟 Bắt đầu trải nghiệm toàn diện','4 chặng liên tiếp: Luyện tập → Đoán nút → Truy tìm nút → Sửa cây lỗi')+
+  '<div style="display:flex;gap:8px;margin-top:8px"><button class="bt" data-x="hs2" style="margin:0;text-align:center">🏅 Thành tích</button><button class="bt" data-x="hr" style="margin:0;text-align:center">❓ Luật chơi</button></div>')}
 OP.game=hub;OP.quiz=hub;
 const qStart=t=>{rdCfg();if(!QX.cfg.tps.length||!QX.cfg.tys.length)return toast('Hãy chọn ít nhất 1 chủ đề và 1 dạng câu hỏi');QX.timed=t;startQuiz()};
 X.mPrac=()=>qStart(0);X.mTime=()=>qStart(1);
