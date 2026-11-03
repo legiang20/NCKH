@@ -169,7 +169,7 @@ X.s3ok=()=>{const L=lvl(),n=L.length,A=$('#f1').value.split(/[\s,;]+/).filter(Bo
   afterScan();if(!isLocked&&lockFn)lockFn(true)};                              // tự động cố định, không cần bấm khóa
 X.s3re=()=>{rescanFn&&rescanFn()};
 async function readDigits(src,C,f,map){         // đọc số trong từng nút: cắt ruột nút, nhị phân hoá Otsu, thử 2 chế độ nhận dạng
-  const my=scanId,n=C.length,v={};let got=0;
+  const my=scanId,n=C.length,v={},tess={},unsure=new Set(),queue=[];let got=0,nViet=0;
   const prep=c=>{const s=c.r*f*2.1,k=document.createElement('canvas');k.width=k.height=160;const g=k.getContext('2d',{willReadFrequently:true});
     g.fillStyle='#fff';g.fillRect(0,0,160,160);g.drawImage(src,c.x*f-s/2,c.y*f-s/2,s,s,0,0,160,160);
     const im=g.getImageData(0,0,160,160),d=im.data,R=76*.88,H=new Int32Array(256),gy=new Uint8Array(25600);let tot=0;
@@ -184,14 +184,21 @@ async function readDigits(src,C,f,map){         // đọc số trong từng nút
     for(let i=0;i<n;i++){if(my!=scanId)return false;const rd=$('#rd');if(rd)rd.textContent=`${i+1}/${n}`;const k=prep(C[i]);let best=null;
       for(const m of['7','10']){await w.setParameters({tessedit_pageseg_mode:m});const {data}=await w.recognize(k),t=data.text.replace(/\D/g,'');
         if(t&&t.length<=3&&(!best||data.confidence>best.c))best={t,c:data.confidence};if(best&&best.c>70)break}
-      if(best&&best.c>30){v[i]=+best.t;got++}}
+      tess[i]=best&&best.c>30?{t:best.t,c:best.c}:null;
+      if(tess[i]){v[i]=+best.t;got++}
+      if(!best||best.c<=VOCR.th){const im=VOCR.tight(k);if(im)queue.push({i,im})}}     // chỉ nút Tesseract chưa chắc mới nhờ bộ đọc chữ viết tay
+    if(queue.length){const rs=await VOCR.recognize(queue.map(q=>q.im),'✍ Đang đọc bổ sung '+queue.length+' số viết tay…');   // gửi 1 lần cho cả lô
+      if(my!=scanId)return false;
+      if(rs)rs.forEach((r,j)=>{const i=queue[j].i,m=VOCR.merge(tess[i],r);if(!m)return;if(v[i]==null)got++;v[i]=+m.t;if(m.src!='tess')nViet++;if(m.flag)unsure.add(i)});
+      else queue.forEach(q=>{if(tess[q.i])unsure.add(q.i)})}
   }catch(e){if(my!=scanId)return false;cfm('⚠ Không đọc tự động được số ('+e.message+') — hãy nhập số theo giấy.');return}
   if(my!=scanId)return false;
   const cnt={};Object.values(v).forEach(x=>cnt[x]=(cnt[x]||0)+1);const dup=Object.keys(cnt).filter(x=>cnt[x]>1);
   const used=new Set(Object.values(v));let nx=1;
   Object.keys(map).forEach(i=>{if(v[i]==null||dup.includes(String(v[i]))){while(used.has(nx))nx++;v[i]=nx;used.add(nx)}map[i].v=v[i]});
   clear();refresh();const ino=inord().map(n=>n.v);
-  cfm(got<Math.ceil(n*.7)?`⚠ Chỉ đọc được ${got}/${n} số, các số còn lại là số tạm.`:dup.length?'⚠ Có số đọc trùng nhau nên đã đổi tạm.':`🔤 Đã đọc ${got}/${n} số`+(ino.every((x,i)=>!i||x>ino[i-1])&&n>1?' · cây này cũng là BST':'')+'.')}
+  const L0=lvl(),us=[...unsure].map(i=>L0.indexOf(map[i])+1).filter(x=>x>0).sort((a,b)=>a-b),ex=(nViet?' ✍ Bộ đọc chữ viết tay bổ sung '+nViet+' số.':'')+(us.length?' ⚠ Số thứ '+us.join(', ')+' chưa chắc chắn, hãy kiểm tra kỹ.':'');
+  cfm((got<Math.ceil(n*.7)?`⚠ Chỉ đọc được ${got}/${n} số, các số còn lại là số tạm.`:dup.length?'⚠ Có số đọc trùng nhau nên đã đổi tạm.':`🔤 Đã đọc ${got}/${n} số`+(ino.every((x,i)=>!i||x>ino[i-1])&&n>1?' · cây này cũng là BST':'')+'.')+ex)}
 
 async function loadLibs(){try{THREE=await import('three');stt('✅ Sẵn sàng');$('#bAR').disabled=false;$('#bDemo').disabled=false}catch(e){stt('❌ Không tải được Three.js ('+(e&&e.message||e)+'). Kiểm tra mạng rồi tải lại trang.')}}
 loadLibs();
@@ -380,18 +387,24 @@ async function startAR(useCam){
       const worker=await getOcr();
       await worker.setParameters({tessedit_char_whitelist:'0123456789',tessedit_pageseg_mode:'11'});
       const {data}=await worker.recognize(imageCanvas);
-      return (data.words||[]).map(w=>{
+      const items=(data.words||[]).map(w=>{
         const text=String(w.text||'').trim(), b=w.bbox||{};
         return {text,value:Number(text),confidence:Number(w.confidence)||0,
-          x:((b.x0||0)+(b.x1||0))/2,y:((b.y0||0)+(b.y1||0))/2};
+          x:((b.x0||0)+(b.x1||0))/2,y:((b.y0||0)+(b.y1||0))/2,box:{x0:b.x0||0,y0:b.y0||0,x1:b.x1||0,y1:b.y1||0}};
       }).filter(x=>/^\d{1,3}$/.test(x.text)&&Number.isFinite(x.value))
         .sort((a,b)=>a.y-b.y||a.x-b.x);
+      // Tesseract chưa chắc → chỉ cắt đúng vùng chữ số đó nhờ bộ đọc chữ viết tay (không chạy trên toàn ảnh)
+      const low=items.filter(x=>x.confidence<=VOCR.th);
+      if(low.length){const crops=low.map(x=>VOCR.crop(imageCanvas,x.box)),ok=crops.map(c=>!!c),rs=await VOCR.recognize(crops.filter(Boolean),'✍ Đang đọc bổ sung '+crops.filter(Boolean).length+' số viết tay…');let q=0;
+        low.forEach((x,j)=>{const r=ok[j]&&rs?rs[q++]:(ok[j]&&q++,null),m=VOCR.merge({t:x.text,c:x.confidence},r);
+          if(m){x.text=m.t;x.value=+m.t;x.confidence=m.c;x.src=m.src;x.flag=m.flag}else x.flag=1})}
+      return items;
     }
     function countTree(n){return n?1+countTree(n.l)+countTree(n.r):0}
     function loadPaperTree(snap,items){
-      const detected=items.map(x=>x.text).join('  ');
+      const detected=items.map(x=>x.text+(x.flag?'?':'')).join('  ');
       const suggestion=prompt(
-        'OCR đọc được các số (theo vị trí gần từ trên xuống):\n'+(detected||'(chưa đọc được số nào)')+
+        'OCR đọc được các số (theo vị trí gần từ trên xuống):\n'+(detected||'(chưa đọc được số nào)')+(items.some(x=>x.flag)?'\n(dấu ? = chưa chắc chắn, hãy đối chiếu với giấy)':'')+
         '\n\nNhập cấu trúc cây để web dựng 3D. Ví dụ: 8(3(1,6),10)\n'+
         'Cú pháp: gốc(con_trái,con_phải); để trống nếu thiếu nút, ví dụ 8(,10).',
         ''
