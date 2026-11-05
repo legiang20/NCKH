@@ -1,0 +1,257 @@
+/* ===== ui-modern.css — lớp giao diện hiện đại, giữ tông xanh navy + cam của web =====
+   Nạp SAU style.css. Chỉ đổi màu / bo góc / bóng / cỡ nút, không đổi vị trí bố cục. */
+
+/* ---------- Bảng màu ---------- */
+html[data-theme]{
+  --u-or:#ff8a2b;--u-or2:#f76707;--u-gr:#37b24d;--u-gr2:#2b8a3e;--u-bl:#4dabf7;--u-rd:#fa5252;--u-yl:#fab005;
+  --u-r:14px;--u-r-sm:10px;
+  --u-font:"Segoe UI","Be Vietnam Pro",Inter,system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --u-ease:cubic-bezier(.2,.8,.2,1);
+}
+html[data-theme="dark"]{
+  --u-panel:rgba(13,22,35,.78);--u-solid:#101b2a;--u-text:#e9f1fb;--u-mut:#a3b7d1;--u-ort:#ffa04d;
+  --u-bd:rgba(255,255,255,.10);--u-btn:rgba(255,255,255,.07);--u-btn-h:rgba(255,255,255,.15);
+  --u-in:rgba(0,0,0,.30);--u-sh:0 10px 30px rgba(0,0,0,.45);--u-chip:rgba(255,255,255,.09);
+}
+html[data-theme="light"]{
+  --u-panel:rgba(255,255,255,.84);--u-solid:#ffffff;--u-text:#14263d;--u-mut:#44586f;--u-ort:#b43c08;
+  --u-bd:rgba(20,50,90,.14);--u-btn:rgba(20,50,90,.06);--u-btn-h:rgba(20,50,90,.13);
+  --u-in:rgba(255,255,255,.95);--u-sh:0 10px 28px rgba(30,60,110,.18);--u-chip:rgba(20,50,90,.08);
+}
+html[data-theme] body{font-family:var(--u-font);-webkit-font-smoothing:antialiased;color:var(--u-text)}
+
+/* ---------- Tấm kính (mọi panel .gl) ---------- */
+html[data-theme] .gl{
+  background:var(--u-panel);color:var(--u-text);
+  border:1px solid var(--u-bd);border-radius:var(--u-r);
+  box-shadow:var(--u-sh);
+  -webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);
+}
+
+/* ---------- Nút bấm ---------- */
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button{
+  font-family:var(--u-font);font-weight:600;font-size:13.5px;letter-spacing:.1px;
+  color:var(--u-text);background:var(--u-btn);
+  border:1px solid var(--u-bd);border-radius:var(--u-r-sm);
+  min-height:38px;padding:7px 12px;cursor:pointer;
+  transition:background .18s var(--u-ease),transform .12s var(--u-ease),box-shadow .18s var(--u-ease),border-color .18s;
+  -webkit-tap-highlight-color:transparent;
+}
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button:hover{background:var(--u-btn-h)}
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button:active{transform:scale(.96)}
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+/* nút chính (cam) */
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.or{
+  color:#fff;background:linear-gradient(180deg,var(--u-or),var(--u-or2));border-color:transparent;
+  text-shadow:0 1px 1px rgba(0,0,0,.25);box-shadow:0 4px 14px rgba(247,103,7,.38),inset 0 1px 0 rgba(255,255,255,.28)}
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.or:hover{filter:brightness(1.08);background:linear-gradient(180deg,var(--u-or),var(--u-or2))}
+/* nút trạng thái bật (xanh lá) */
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.gr{
+  color:#fff;background:linear-gradient(180deg,var(--u-gr),var(--u-gr2));border-color:transparent;
+  box-shadow:0 4px 12px rgba(43,138,62,.35),inset 0 1px 0 rgba(255,255,255,.25)}
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.gr:hover{filter:brightness(1.08);background:linear-gradient(180deg,var(--u-gr),var(--u-gr2))}
+/* nút nguy hiểm (xóa) */
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.bad{
+  color:#fff;background:linear-gradient(180deg,#fa5252,#e03131);border-color:transparent;box-shadow:0 4px 12px rgba(224,49,49,.35)}
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.nf,
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button[hidden]{display:none!important}
+/* vòng focus khi dùng bàn phím */
+html[data-theme] :is(button,select,input,a):focus-visible{outline:2px solid var(--u-or);outline-offset:2px}
+
+/* ---------- Thanh trên ---------- */
+html[data-theme] #top{padding:8px 12px;gap:8px;font-size:12.5px;letter-spacing:.4px;color:var(--u-mut)}
+html[data-theme] #top b{font-weight:800}
+
+/* ---------- 3 chế độ: dạng viên thuốc (segmented) ---------- */
+html[data-theme] #modes{padding:5px;border-radius:999px;gap:4px}
+html[data-theme] #modes button{border-radius:999px;border-color:transparent;background:transparent;min-height:36px;padding:6px 16px}
+html[data-theme] #modes button:hover{background:var(--u-btn-h)}
+html[data-theme] #modes button.or{color:#fff;background:linear-gradient(180deg,var(--u-or),var(--u-or2))}
+html[data-theme] #modes small{color:var(--u-mut);font-size:12px;padding:0 10px 0 6px}
+
+/* ---------- Thanh công cụ (cột trái) ---------- */
+html[data-theme] #tools{padding:8px;gap:6px;border-radius:18px}
+html[data-theme] #tools button{text-align:left;min-height:42px;font-size:13px}
+html[data-theme] #tools button.tgl{color:var(--u-mut);font-weight:700;text-align:center;background:transparent;border-style:dashed}
+html[data-theme] #tools button:disabled{opacity:.35}
+
+/* ---------- Ô chọn / nhập liệu ---------- */
+html[data-theme] select,
+html[data-theme] :is(#mo,#start) input[type=text],
+html[data-theme] :is(#mo,#start) input[type=number],
+html[data-theme] :is(#mo,#start) input:not([type]){
+  font-family:var(--u-font);font-size:14px;color:var(--u-text);
+  background-color:var(--u-in);border:1px solid var(--u-bd);border-radius:var(--u-r-sm);
+  min-height:38px;padding:6px 10px;
+}
+html[data-theme] select{font-weight:600;cursor:pointer}
+html[data-theme] option{background:var(--u-solid);color:var(--u-text)}
+html[data-theme] :is(#mo) input:focus,html[data-theme] select:focus{border-color:var(--u-or);box-shadow:0 0 0 3px rgba(255,138,43,.22);outline:none}
+html[data-theme] #mo input[type=range]{accent-color:var(--u-or);width:100%}
+html[data-theme] #mo input[type=checkbox]{accent-color:var(--u-or)}
+
+/* ---------- Hộp thoại ---------- */
+html[data-theme] #mo{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+html[data-theme] #mo>.gl{
+  background:var(--u-solid);border-radius:20px;padding:18px 18px 14px;
+  box-shadow:0 24px 60px rgba(0,0,0,.5);animation:uPop .22s var(--u-ease);
+}
+html[data-theme] #mo h3{margin:0 0 10px;font-size:18px;font-weight:800;letter-spacing:.2px}
+html[data-theme] #mbd{font-size:14px;line-height:1.55;color:var(--u-text)}
+html[data-theme] #mbd label{display:block;margin:12px 0 5px;font-size:12.5px;font-weight:700;color:var(--u-mut);letter-spacing:.3px}
+html[data-theme] #mbd label:has(input[type=checkbox]){display:flex;align-items:center;gap:8px;color:var(--u-text);font-weight:600}
+html[data-theme] #mbd hr{border:0;border-top:1px solid var(--u-bd);margin:12px 0;opacity:1!important}
+html[data-theme] #mbd small{display:block;color:var(--u-mut);font-size:12px;margin-top:8px;line-height:1.45}
+html[data-theme] #mbd .adinfo{padding:8px 12px;border-radius:var(--u-r-sm);background:var(--u-chip);margin-bottom:4px}
+html[data-theme] #mbd .adwarn{color:var(--u-rd)}
+html[data-theme] #mbd button.bt{display:block;width:100%;margin:7px 0;text-align:left;min-height:46px;font-size:14px;border-radius:12px}
+html[data-theme] #mbd input,html[data-theme] #mbd select{width:100%;box-sizing:border-box}
+html[data-theme] #mo .b{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+html[data-theme] #mo .b button{min-width:92px}
+html[data-theme] #mbd table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--u-bd);border-radius:12px;overflow:hidden;margin:6px 0 10px}
+html[data-theme] #mbd td{padding:8px 12px;border-bottom:1px solid var(--u-bd);font-size:13.5px}
+html[data-theme] #mbd tr:last-child td{border-bottom:0}
+html[data-theme] #mbd tr:nth-child(even) td{background:var(--u-btn)}
+html[data-theme] #mbd td:last-child{text-align:right;font-weight:800;color:var(--u-ort)}
+@keyframes uPop{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+
+/* ---------- Thông tin nút / mã giả / game ---------- */
+html[data-theme] #info,html[data-theme] #code,html[data-theme] #gm{padding:12px 14px;font-size:13px;line-height:1.5}
+html[data-theme] #info h4{margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:1.2px;color:var(--u-mut);text-align:center}
+html[data-theme] #info i{color:var(--u-mut)}
+html[data-theme] #info .nbadge span{letter-spacing:.2px}
+html[data-theme] #info .ngrid div{background:var(--u-chip);border:1px solid var(--u-bd)}
+html[data-theme] #info .ngrid .k{border-color:rgba(255,146,43,.65);box-shadow:none;background:rgba(255,138,43,.12)}
+html[data-theme] #code pre,html[data-theme] #code code{font-family:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;font-size:12.5px}
+
+/* ---------- Thanh mô phỏng duyệt ---------- */
+html[data-theme] #trav{padding:10px 12px}
+html[data-theme] #trav .r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+html[data-theme] #tt{font-size:11.5px;letter-spacing:1.2px;color:var(--u-ort)}
+html[data-theme] #trav :is(#bPv,#bPlay,#bNx){min-width:42px;border-radius:50%;padding:7px 0}
+html[data-theme] #trav #bPlay{color:#fff;background:linear-gradient(180deg,var(--u-or),var(--u-or2));border-color:transparent}
+html[data-theme] #out{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+html[data-theme] #out span{padding:4px 10px;border-radius:999px;background:var(--u-chip);border:1px solid var(--u-bd);font-weight:700;font-size:13px}
+html[data-theme] #out span.cu{color:#fff;background:var(--u-or);border-color:transparent;box-shadow:0 2px 10px rgba(247,103,7,.5)}
+html[data-theme] #nt{margin-top:6px;color:var(--u-mut);font-size:12.5px}
+
+/* ---------- Bong bóng hướng dẫn, toast ---------- */
+html[data-theme] #coach{border-color:rgba(250,176,5,.55);border-radius:999px;padding:7px 8px 7px 16px;gap:10px;font-size:13.5px}
+html[data-theme] #coach button{min-height:30px;padding:4px 12px;border-radius:999px;font-size:12.5px}
+html[data-theme] #coach.hl,html[data-theme] .hl{box-shadow:0 0 0 3px rgba(255,138,43,.55),0 0 18px rgba(255,138,43,.45)}
+html[data-theme] #toast{background:var(--u-solid);color:var(--u-text);border:1px solid var(--u-bd);border-radius:14px;box-shadow:var(--u-sh);font-weight:600;font-size:13.5px}
+html[data-theme] #err{border-radius:12px}
+
+/* ---------- Màn hình khởi động ---------- */
+html[data-theme] #start{font-family:var(--u-font);color:var(--u-text)}
+html[data-theme] #start h1{font-weight:800;letter-spacing:-.4px;background:linear-gradient(90deg,var(--u-or),#ffd43b);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+html[data-theme] #start p{line-height:1.6;color:var(--u-mut)}
+html[data-theme] #start #stt{display:inline-block;padding:4px 12px;border-radius:999px;background:var(--u-chip);color:var(--u-text);font-size:13px}
+html[data-theme] #start button{display:block;width:100%;max-width:420px;margin:10px auto 0;min-height:50px;font-size:15.5px;border-radius:14px}
+html[data-theme] #start #bAR{color:#fff;background:linear-gradient(180deg,var(--u-or),var(--u-or2));border-color:transparent;box-shadow:0 8px 22px rgba(247,103,7,.4)}
+
+/* ---------- Thanh cuộn mảnh ---------- */
+html[data-theme] *{scrollbar-width:thin;scrollbar-color:rgba(147,169,196,.45) transparent}
+html[data-theme] ::-webkit-scrollbar{width:8px;height:8px}
+html[data-theme] ::-webkit-scrollbar-thumb{background:rgba(147,169,196,.4);border-radius:8px}
+
+/* ---------- Màn hình nhỏ: nút to, dễ chạm ---------- */
+@media (max-width:760px){
+  html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#gm) button{min-height:42px}
+  html[data-theme] #modes{border-radius:20px}
+  html[data-theme] #modes button{padding:6px 12px}
+  html[data-theme] #mo>.gl{border-radius:18px}
+  html[data-theme] #coach{border-radius:16px}
+}
+@media (prefers-reduced-motion:reduce){html[data-theme] *{animation:none!important;transition:none!important}}
+
+/* =====================================================================
+   RÀ SOÁT GIAO DIỆN: tương thích điện thoại / máy tính bảng / máy tính
+   ===================================================================== */
+html[data-theme]{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html[data-theme] body{overscroll-behavior:none;touch-action:manipulation}
+
+/* Panel thông tin nút không bao giờ che thanh mô phỏng ở đáy */
+html[data-theme] #info{max-height:calc(100vh - var(--ti,70px) - var(--tb,16px) - 8px);max-height:calc(100dvh - var(--ti,70px) - var(--tb,16px) - 8px);overflow:auto}
+
+/* Hộp thoại: không tràn màn hình, cuộn bên trong khi nội dung dài */
+html[data-theme] #mo:not(.c)>.gl{max-width:min(94vw,480px);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box}
+
+/* Khung mã giả / Python */
+html[data-theme] #code{overflow-x:auto;max-width:calc(100vw - 16px)}
+html[data-theme] #code .tb{display:flex;gap:6px;margin-bottom:8px}
+html[data-theme] #code .tb button{min-height:30px;padding:4px 14px;border-radius:999px;font-size:12.5px}
+html[data-theme] #code .tb button.on{color:var(--u-ort);background:rgba(255,138,43,.16);border-color:var(--u-or)}
+html[data-theme] #code .ln{font-family:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;font-size:12.5px;white-space:pre-wrap;padding:2px 8px;border-radius:6px;line-height:1.6}
+html[data-theme] #code .ln.on{background:rgba(255,138,43,.22);box-shadow:inset 3px 0 0 var(--u-or);font-weight:700}
+
+/* ---------- Điện thoại (≤ 760px) ---------- */
+@media (max-width:760px){
+  /* Thanh mô phỏng: dòng 1 = nhãn + kiểu duyệt; dòng 2 = ⏮ ▶ ⏭ + tốc độ (nút Lùi xuống dòng hẳn) */
+  html[data-theme] #trav .r{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  html[data-theme] #trav #tt{flex:0 0 auto}
+  html[data-theme] #trav #tk{flex:1 1 150px;min-width:0}
+  html[data-theme] #trav .sp{flex:0 0 100%;height:0;margin:0;padding:0}
+  html[data-theme] #trav :is(#bPv,#bPlay,#bNx){flex:0 0 44px;width:44px;height:44px;min-width:44px;padding:0}
+  html[data-theme] #trav #spd{flex:0 0 auto;margin-left:auto}
+  html[data-theme] #out{margin-top:6px}
+  /* Ô nhập ≥ 16px để iOS không tự phóng to */
+  html[data-theme] :is(#mo,#start,#trav,#top) :is(input,select){font-size:16px}
+  /* Thanh 3 chế độ: mô tả xuống dòng riêng, không đẩy lệch các tab */
+  html[data-theme] #modes{flex-wrap:wrap;justify-content:center}
+  html[data-theme] #modes small{flex:1 0 100%;text-align:center;padding:2px 8px 4px}
+  html[data-theme] #modes button span{font-size:13px}
+  html[data-theme] #coach{font-size:13px}
+  html[data-theme] #info .nhelp{font-size:10px}
+}
+
+/* ---------- Điện thoại rất hẹp (≤ 380px) ---------- */
+@media (max-width:380px){
+  html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#gm) button{padding:6px 9px;font-size:12.5px}
+  html[data-theme] #modes button{padding:6px 9px}
+  html[data-theme] #mo>.gl{padding:14px 14px 12px}
+}
+
+/* ---------- Điện thoại xoay ngang / màn hình thấp ---------- */
+@media (max-height:480px){
+  html[data-theme] #tools button{min-height:34px;font-size:12px;padding:4px 10px}
+  html[data-theme] #modes button{min-height:32px}
+  html[data-theme] #mo h3{font-size:16px;margin-bottom:6px}
+  html[data-theme] #mbd button.bt{min-height:40px;margin:5px 0}
+}
+
+/* ---------- Máy tính bảng & máy tính ---------- */
+@media (min-width:761px){
+  html[data-theme] #mbd button.bt:hover{transform:translateX(2px)}
+}
+@media (min-width:1400px){
+  html[data-theme] :is(#top,#modes,#tools,#trav) button{font-size:14.5px}
+  html[data-theme] #info,html[data-theme] #code,html[data-theme] #gm{font-size:14px}
+}
+/* Thiết bị cảm ứng: bỏ hiệu ứng "dính" khi rê chuột */
+@media (hover:none){
+  html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button:hover{background:var(--u-btn)}
+  html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.or:hover{background:linear-gradient(180deg,var(--u-or),var(--u-or2))}
+  html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.gr:hover{background:linear-gradient(180deg,var(--u-gr),var(--u-gr2))}
+}
+
+
+/* =====================================================================
+   TRỢ NĂNG: độ tương phản chữ (tối thiểu 4.5:1) + ảnh xem trước
+   ===================================================================== */
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.or,html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.or:hover,
+html[data-theme] #modes button.or,html[data-theme] #trav #bPlay,html[data-theme] #start #bAR,html[data-theme] #out span.cu{color:#2a1300;text-shadow:none}
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.gr,html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.gr:hover{background:linear-gradient(180deg,#2b8a3e,#237032);color:#fff}
+html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.bad,html[data-theme] :is(#top,#modes,#tools,#trav,#mo,#start,#coach,#gm,#code) button.bad:hover{background:linear-gradient(180deg,#e03131,#c92a2a);color:#fff}
+html[data-theme] #info .nhelp,html[data-theme] #info .ngrid small,html[data-theme] #info i{opacity:1;color:var(--u-mut)}
+html[data-theme="light"] #info .nbadge.root span{color:#8a5a00}
+html[data-theme="light"] #info .nbadge.br span{color:#1864ab}
+html[data-theme="light"] #info .nbadge.leaf span{color:#237032}
+html[data-theme] #mbd #imgprev{display:block;max-width:100%;max-height:46vh;margin:10px auto 0;border:1px solid var(--u-bd);border-radius:10px;background:#fff;object-fit:contain}
+
+
+/* ===== Thanh công cụ: gọn hơn + tự cuộn khi cao hơn màn hình (để không bị cắt mất nút ở cuối) ===== */
+html[data-theme] #tools{gap:4px;padding:7px;max-height:calc(100vh - var(--ti,70px) - var(--tb,16px) - 8px);max-height:calc(100dvh - var(--ti,70px) - var(--tb,16px) - 8px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box}
+html[data-theme] #tools button{min-height:38px;padding:6px 10px;line-height:1.25}
+@media (max-width:760px){html[data-theme] #tools button{min-height:40px}}
+@media (max-height:480px){html[data-theme] #tools button{min-height:32px}}
