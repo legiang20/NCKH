@@ -247,21 +247,10 @@ X.s3ok=()=>{const L=lvl(),n=L.length,A=$('#f1').value.split(/[\s,;]+/).filter(Bo
   close();L.forEach((x,i)=>x.v=A[i]);document.body.classList.remove('cfm');   // hiện lại các chức năng
   afterScan();if(!isLocked&&lockFn)lockFn(true)};                              // tự động cố định, không cần bấm khóa
 X.s3re=()=>{rescanFn&&rescanFn()};
-// Kết quả quét → dữ liệu ban đầu cho màn hình chỉnh cấu trúc: par[i] = nút cha (-1 = chưa có), unc[i] = đường nối lên cha chưa chắc.
-// Không ép thành cây hợp lệ: nút nào chưa rõ cha thì để trống cho người dùng chọn.
-function edInit(r){const n=r.C.length,par=Array(n).fill(-1),unc=Array(n).fill(false),wk=new Set((r.wk||[]).map(e=>ek(e.i,e.j))),sf=new Set((r.sf||[]).map(e=>ek(e[0],e[1])));
-  if(r.tr.ok){(function z(u){[u.l,u.r].forEach(c=>{if(c){par[c.i]=u.i;z(c)}})})(r.tr.root)}
-  else{const E=r.ed.concat(r.sf||[]),adj=r.C.map(()=>[]);E.forEach(([a,b])=>{adj[a].push(b);adj[b].push(a)});const seen=new Set(),ord=r.C.map((_,i)=>i).sort((a,b)=>r.C[a].y-r.C[b].y);
-    const comps=[];ord.forEach(s0=>{if(seen.has(s0))return;const cp=[s0];seen.add(s0);for(let k=0;k<cp.length;k++)adj[cp[k]].forEach(v=>{if(!seen.has(v)){seen.add(v);cp.push(v)}});comps.push(cp)});
-    comps.forEach(cp=>{const root=cp[0],sn=new Set([root]),q=[root];for(let k=0;k<q.length;k++)adj[q[k]].forEach(v=>{if(!sn.has(v)){sn.add(v);par[v]=q[k];q.push(v)}})   // gốc = nút cao nhất của từng cụm, nối xuống theo các nét đã dò được
-      ;cp.forEach(u=>adj[u].forEach(v=>{if(par[u]!==v&&par[v]!==u){unc[u]=unc[v]=true}}))})}   // nét thừa tạo vòng → đánh dấu chưa chắc
-  for(let v=0;v<n;v++)if(par[v]>=0){const k=ek(par[v],v);if(wk.has(k)||sf.has(k))unc[v]=true}
-  (r.tr.pend||[]).forEach(p=>{if(p.cur>=0)unc[p.v]=true;else{par[p.v]=-1;unc[p.v]=true}});
-  return{par,unc}}
 // ---------- ĐỌC SỐ TRONG NÚT (bản mới, dùng cho màn hình chỉnh cấu trúc) ----------
 // digitCrop: cắt RIÊNG phần chữ số trong một nút: chuẩn hoá nền (bóng/thiếu sáng), tăng tương phản, bỏ vòng tròn của nút,
 // bỏ vạch kẻ ô li chạy xuyên nút, bỏ nét rời chạm mép, rồi phóng chữ lên cỡ vừa cho bộ đọc. Trả về canvas chữ đen nền trắng (hoặc null nếu không có nét).
-function digitCrop(src,c,f){const N=192,s=c.r*f*2.4,rho=N/2.4/1,R=rho*.78,cv=document.createElement('canvas');cv.width=cv.height=N;const g=cv.getContext('2d',{willReadFrequently:true});
+function digitCrop(src,c,f,tm){tm=tm||1;const N=192,s=c.r*f*2.4,rho=N/2.4/1,R=rho*.78,cv=document.createElement('canvas');cv.width=cv.height=N;const g=cv.getContext('2d',{willReadFrequently:true});
   g.fillStyle='#fff';g.fillRect(0,0,N,N);g.drawImage(src,c.x*f-s/2,c.y*f-s/2,s,s,0,0,N,N);
   const im=g.getImageData(0,0,N,N),d=im.data,gy=new Float32Array(N*N);for(let i=0;i<N*N;i++)gy[i]=(d[i*4]*77+d[i*4+1]*150+d[i*4+2]*29)/256;
   // 1) bỏ ảnh hưởng của bóng / ánh sáng không đều: chia cho nền ước lượng (làm mờ hộp lớn bằng ảnh tích phân)
@@ -277,6 +266,7 @@ function digitCrop(src,c,f){const N=192,s=c.r*f*2.4,rho=N/2.4/1,R=rho*.78,cv=doc
   // 3) nhị phân hoá Otsu chỉ trong vùng chữ
   const H2=new Int32Array(256);for(let i=0;i<N*N;i++)if(ins[i])H2[st[i]|0]++;let sm=0;for(let i=0;i<256;i++)sm+=i*H2[i];let wb=0,sb=0,mx=-1,th=128;
   for(let i=0;i<256;i++){wb+=H2[i];if(!wb)continue;const wf=tot-wb;if(!wf)break;sb+=i*H2[i];const m1=sb/wb,m2=(sm-sb)/wf,v=wb*wf*(m1-m2)*(m1-m2);if(v>mx){mx=v;th=i}}
+  th=Math.min(250,th*tm);                                           // tm<1: tách nét chặt hơn (nét mảnh hơn); tm>1: nới (nét đậm hơn) — thử cả 3 để chọn kết quả đa số
   let m=new Uint8Array(N*N),dk=0;for(let i=0;i<N*N;i++)if(ins[i]&&st[i]<=th){m[i]=1;dk++}
   if(dk>tot*.5){for(let i=0;i<N*N;i++)m[i]=ins[i]&&!m[i]?1:0}        // chữ sáng trên nền tối → đảo lại
   // 4a) vạch kẻ ô li (kể cả khi ảnh nghiêng): với mỗi họ vạch (ngang / dọc, lệch tối đa ±24°) tìm các đường mà ≥60% đoạn cắt qua vùng chữ là mực — chữ số không bao giờ phủ kín cả dây cung như vậy.
@@ -306,7 +296,7 @@ function digitCrop(src,c,f){const N=192,s=c.r*f*2.4,rho=N/2.4/1,R=rho*.78,cv=doc
   if(!cs.length)return null;
   let all=cs.reduce((u,c)=>u+c.ar,0),keep=cs.filter(c=>c.ar>=Math.max(8,all*.012)),inner=keep.filter(c=>c.tc<c.ar*.4);    // mảnh vòng tròn nằm sát mép (đa số điểm của nó ở mép) mới bị bỏ; số hai chữ số chỉ chạm mép thì vẫn giữ
   
-  {const nm=keep.filter(c=>!((c.mc>=c.ar*.6&&Math.max(c.x1-c.x0,c.y1-c.y0)<R*.5)));if(nm.length&&nm.length<keep.length)keep=nm}      // bỏ đoạn vạch kẻ còn sót khi vẫn còn nét chữ khác
+  {const nm=keep.filter(c=>!((c.mc>=c.ar*.6&&Math.max(c.x1-c.x0,c.y1-c.y0)<R*.5)||((c.x1-c.x0+1)<=3&&(c.y1-c.y0+1)>=R*.35&&keep.some(o=>o!==c&&o.ar>c.ar*3))||((c.y1-c.y0+1)<=3&&(c.x1-c.x0+1)>=R*.35&&keep.some(o=>o!==c&&o.ar>c.ar*3))));if(nm.length&&nm.length<keep.length)keep=nm}      // bỏ đoạn vạch kẻ còn sót khi vẫn còn nét chữ khác
   inner=inner.filter(c=>keep.includes(c));
   if(inner.length&&inner.reduce((u,c)=>u+c.ar,0)>=all*.25)keep=inner;
   if(!keep.length)return null;
@@ -328,49 +318,33 @@ function digitCrop(src,c,f){const N=192,s=c.r*f*2.4,rho=N/2.4/1,R=rho*.78,cv=doc
 function digitVariants(k){const out=[];[[-10,1],[10,1],[0,1.4]].forEach(([deg,z])=>{const c=document.createElement('canvas'),W=Math.round(k.width*z),H=Math.round(k.height*z);c.width=Math.max(W,k.width+40);c.height=Math.max(H,k.height+40);
     const g=c.getContext('2d',{willReadFrequently:true});g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.translate(c.width/2,c.height/2);g.rotate(deg*Math.PI/180);g.scale(z,z);g.drawImage(k,-k.width/2,-k.height/2);out.push(c)});return out}
 // Đọc số của từng nút. on(i,{t,flag,c,src}) được gọi ngay khi đọc xong từng nút. Không dùng cấu trúc cây để đoán/đổi số.
-async function readNodeValues(src,C,f,on,alive){const n=C.length,tess={},crops={},res={};
-  for(let i=0;i<n;i++){crops[i]=digitCrop(src,C[i],f);if(!crops[i])on(i,{t:'',flag:1,c:0,src:'none'})}   // cắt ô số trước, KHÔNG phụ thuộc Tesseract (mất mạng vẫn còn bộ đọc viết tay trong trình duyệt)
+async function readNodeValues(src,C,f,on,alive){const n=C.length,tess={},crops={},alts={};
+  for(let i=0;i<n;i++){crops[i]=digitCrop(src,C[i],f,1);if(!crops[i]){on(i,{t:'',flag:1,c:0,src:'none'});continue}
+    alts[i]=[.82,.62].map(m=>digitCrop(src,C[i],f,m)).filter(Boolean)}        // cắt ô số trước, KHÔNG phụ thuộc Tesseract (mất mạng vẫn còn bộ đọc viết tay trong trình duyệt)
   try{const w=await getOcr();
     for(let i=0;i<n;i++){if(alive&&!alive())return;const k=crops[i];if(!k)continue;
       let best=null;const tryK=async(cv,m)=>{await w.setParameters({tessedit_pageseg_mode:m});const {data}=await w.recognize(cv),t=data.text.replace(/\D/g,'');
         if(t&&t.length<=3&&(!best||data.confidence>best.c))best={t,c:data.confidence};return t&&t.length<=3?{t,c:data.confidence}:null};
       for(const m of['7','10']){await tryK(k,m);if(best&&best.c>85)break}
-      const alts=new Set(best?[best.t]:[]);
-      if(!best||best.c<=VOCR.th){for(const v of digitVariants(k)){const r=await tryK(v,'7');if(r)alts.add(r.t);if(best&&best.c>85)break}}   // chưa chắc → thử xoay / phóng to
-      tess[i]=best&&best.c>30?{t:best.t,c:best.c,alt:alts.size>1}:null}
+      const alt=new Set(best?[best.t]:[]);
+      if(!best||best.c<=VOCR.th){for(const v of digitVariants(k)){const r=await tryK(v,'7');if(r)alt.add(r.t);if(best&&best.c>85)break}}   // chưa chắc → thử xoay / phóng to
+      tess[i]=best&&best.c>30?{t:best.t,c:best.c,alt:alt.size>1}:null}
   }catch(e){if(window.console)console.warn('Tesseract:',e)}
   if(alive&&!alive())return;
-  // bộ đọc chữ viết tay chạy trong trình duyệt: đọc MỌI ô (nhanh) để đối chiếu hai nguồn; khác nhau → đánh dấu "chưa chắc", KHÔNG tự đổi theo cấu trúc cây
-  const idx=[],imgs=[];for(let i=0;i<n;i++)if(crops[i]){idx.push(i);imgs.push(crops[i])}
-  let hd=null;try{hd=await VOCR.recognize(imgs,'')}catch(e){}
-  idx.forEach((i,j)=>{const a=tess[i]||null,b=hd&&hd[j]||null,m=VOCR.merge(a,b);if(!m){on(i,{t:a?a.t:'',flag:1,c:a?a.c:0,src:'tess'});return}
-    let flag=m.flag?1:0;if(a&&a.alt)flag=1;if(a&&b&&a.t!=b.t)flag=1;if(m.c<75)flag=1;
+  // Bộ đọc chữ viết tay (chạy ngay trong trình duyệt): mỗi ô được tách nét ở 3 mức khác nhau, đọc cả 3, lấy kết quả được nhiều phiếu nhất.
+  // Chỉ 1 phiếu / các phiếu khác nhau → hạ độ tin cậy để đánh dấu "chưa chắc". KHÔNG dùng cấu trúc cây để đoán hay đổi số.
+  const idx=[],imgs=[],own=[];for(let i=0;i<n;i++)if(crops[i]){idx.push(i);[crops[i]].concat(alts[i]).forEach(cv=>{imgs.push(cv);own.push(i)})}
+  let rs=null;try{rs=await VOCR.recognize(imgs,'')}catch(e){}
+  const hd={};if(rs)rs.forEach((r,j)=>{if(r)(hd[own[j]]=hd[own[j]]||[]).push(r)});
+  idx.forEach(i=>{const a=tess[i]||null,L=hd[i]||[],G={};L.forEach(r=>{const g=G[r.t]=G[r.t]||{t:r.t,sum:0,max:0,v:0};g.sum+=r.c;g.max=Math.max(g.max,r.c);g.v++});
+    const gs=Object.values(G).sort((x,y)=>y.sum-x.sum),g0=gs[0],b=g0?{t:g0.t,c:g0.v>=2?g0.max:Math.min(g0.max,70)}:null,split=gs.length>1&&gs[1].v>=1&&g0.v<2;
+    const m=VOCR.merge(a,b);if(!m){on(i,{t:a?a.t:'',flag:1,c:a?a.c:0,src:'tess'});return}
+    let flag=m.flag?1:0;if(a&&a.alt)flag=1;if(a&&b&&a.t!=b.t)flag=1;if(m.c<75||split)flag=1;
     on(i,{t:m.t,flag,c:m.c,src:m.src})})}
-async function readDigits(src,C,f,map){         // đọc số trong từng nút: cắt ruột nút, nhị phân hoá Otsu, thử 2 chế độ nhận dạng
-  const my=scanId,n=C.length,v={},tess={},unsure=new Set(),queue=[];let got=0,nViet=0;
-  const prep=c=>{const s=c.r*f*2.1,k=document.createElement('canvas');k.width=k.height=160;const g=k.getContext('2d',{willReadFrequently:true});
-    g.fillStyle='#fff';g.fillRect(0,0,160,160);g.drawImage(src,c.x*f-s/2,c.y*f-s/2,s,s,0,0,160,160);
-    const im=g.getImageData(0,0,160,160),d=im.data,R=76*.88,H=new Int32Array(256),gy=new Uint8Array(25600);let tot=0;
-    for(let y=0;y<160;y++)for(let x=0;x<160;x++){const i=y*160+x,q=i*4,l=(d[q]*77+d[q+1]*150+d[q+2]*29)>>8;gy[i]=l;if(Math.hypot(x-80,y-80)<R){H[l]++;tot++}}
-    let sm=0;for(let i=0;i<256;i++)sm+=i*H[i];let wb=0,sb=0,mx=0,th=128;
-    for(let i=0;i<256;i++){wb+=H[i];if(!wb)continue;const wf=tot-wb;if(!wf)break;sb+=i*H[i];const m1=sb/wb,m2=(sm-sb)/wf,bv=wb*wf*(m1-m2)*(m1-m2);if(bv>mx){mx=bv;th=i}}
-    let blk=0;const bw=new Uint8Array(25600);
-    for(let y=0;y<160;y++)for(let x=0;x<160;x++){const i=y*160+x,ins=Math.hypot(x-80,y-80)<R;bw[i]=ins&&gy[i]<=th?1:0;blk+=bw[i]}
-    const inv=blk>tot*.5;for(let i=0;i<25600;i++){const q=i*4,b=inv?(Math.hypot(i%160-80,((i/160)|0)-80)<R&&!bw[i]):bw[i],c=b?0:255;d[q]=d[q+1]=d[q+2]=c;d[q+3]=255}
-    g.putImageData(im,0,0);return k};
-  try{const w=await getOcr();
-    for(let i=0;i<n;i++){if(my!=scanId)return false;const rd=$('#rd');if(rd)rd.textContent=`${i+1}/${n}`;const k=prep(C[i]);let best=null;
-      for(const m of['7','10']){await w.setParameters({tessedit_pageseg_mode:m});const {data}=await w.recognize(k),t=data.text.replace(/\D/g,'');
-        if(t&&t.length<=3&&(!best||data.confidence>best.c))best={t,c:data.confidence};if(best&&best.c>70)break}
-      tess[i]=best&&best.c>30?{t:best.t,c:best.c}:null;
-      if(tess[i]){v[i]=+best.t;got++}
-      if(!best||best.c<=VOCR.th){const im=VOCR.tight(k);if(im)queue.push({i,im})}}     // chỉ nút Tesseract chưa chắc mới nhờ bộ đọc chữ viết tay
-    if(queue.length){const rs=await VOCR.recognize(queue.map(q=>q.im),'✍ Đang đọc bổ sung '+queue.length+' số viết tay…');   // gửi 1 lần cho cả lô
-      if(my!=scanId)return false;
-      if(rs)rs.forEach((r,j)=>{const i=queue[j].i,m=VOCR.merge(tess[i],r);if(!m)return;if(v[i]==null)got++;v[i]=+m.t;if(m.src!='tess')nViet++;if(m.flag)unsure.add(i)});
-      else queue.forEach(q=>{if(tess[q.i])unsure.add(q.i)})}
-  }catch(e){if(my!=scanId)return false;cfm('⚠ Không đọc tự động được số ('+e.message+') — hãy nhập số theo giấy.');return}
-  if(my!=scanId)return false;
+async function readDigits(src,C,f,map){         // đọc số trong từng nút bằng bộ đọc mới (cắt riêng ô số, bỏ vòng tròn / ô li, đọc nhiều mức tách nét, đối chiếu Tesseract)
+  const my=scanId,n=C.length,v={},unsure=new Set();let got=0,nViet=0,k=0;
+  try{await readNodeValues(src,C,f,(i,r)=>{if(my!=scanId)return;if(r.t!==''){if(v[i]==null)got++;v[i]=+r.t;if(r.src=='viet'||r.src=='both')nViet++}if(r.flag)unsure.add(i);const e=$('#rd');if(e)e.textContent=Math.min(++k,n)+'/'+n},()=>my==scanId)}
+  catch(e){if(my!=scanId)return false;cfm('⚠ Không đọc tự động được số ('+e.message+') — hãy nhập số theo giấy.');return}
   const cnt={};Object.values(v).forEach(x=>cnt[x]=(cnt[x]||0)+1);const dup=Object.keys(cnt).filter(x=>cnt[x]>1);
   const used=new Set(Object.values(v));let nx=1;
   Object.keys(map).forEach(i=>{if(v[i]==null||dup.includes(String(v[i]))){while(used.has(nx))nx++;v[i]=nx;used.add(nx)}map[i].v=v[i]});
@@ -543,16 +517,7 @@ async function startAR(useCam){
             const map=adopt(r.tr,r.C,M);locked=false;isLocked=false;document.body.classList.remove('locked');say('');ui();
             ++scanId;bar('<p style="margin:0 0 8px;font-size:13px">Bước 3/3 · 🔤 Đang đọc số trong các nút… <b id="rd"></b></p><button data-x="s3re" style="width:100%">↻ Quét lại</button>');
             readDigits(snap,r.C,1/r.s,map)};
-    // ---- Bước 2/2: màn hình KIỂM TRA & CHỈNH cấu trúc (nút, số, đường nối, cha–con, trái/phải). Chỉ dựng 3D sau khi người dùng bấm xác nhận ----
-    const openEditor=(r,snap,fin)=>{pend=true;say('');const ini=edInit(r),my=++scanId,k=1/r.s;
-      const sg=u=>u?'('+sg(u.l)+sg(u.r)+')':'.',done=(res,L)=>{scanId++;const C2=res.C.map(c=>({x:c.x/k,y:c.y/k,r:c.r/k})),r2=Object.assign({},r,{C:C2,tr:{ok:true,root:res.root,n:C2.length,sig:sg(res.root)}});
-        accept(r2,snap,L,L?undefined:res.vals);fin&&fin(r2)};
-      const libs=r.tr.ok?libMatch(r.tr.root,r.C).map(m=>({n:m.L.n,sim:m.sim,L:m.L})):[];
-      TEDIT.open({img:snap,k,C:r.C,par:ini.par,unc:ini.unc,libs,busy:'🔤 Đang đọc số trong các nút…',
-        onOk:res=>done(res),onLib:(l,res)=>done(res,l.L),
-        onRedo:()=>{scanId++;pend=false;stable=0;lastSig='';og.clearRect(0,0,SW,SH);drawFrame();say('🔍 Quét lại…',1500)}});
-      readNodeValues(snap,r.C,k,(i,v)=>TEDIT.setVal(i,v),()=>my==scanId).then(()=>{if(my==scanId)TEDIT.busy('')}).catch(e=>{console.warn(e);TEDIT.busy('⚠ Không đọc tự động được số — hãy nhập số theo giấy.')})};
-    const review=(r,snap,fin)=>typeof TEDIT!='undefined'?openEditor(r,snap,fin):(r.tr.needConfirm?askRel(r,snap,fin):ask2(r,snap));
+    const review=(r,snap,fin)=>r.tr.needConfirm?askRel(r,snap,fin):ask2(r,snap);
     const step=()=>{
       const vw=vid.videoWidth,vh=vid.videoHeight;if(!vw)return;
       const isS=mode=='scan',_tk=(ANX.track=isS?0:1),r=scanSrc(vid,vw,vh,640,isS?undefined:[M.dd||2],isS?undefined:[M.lo||0],isS?roiSrc(vw,vh):null,isS?undefined:(M.sm?1:0)),k=Math.max(SW/vw,SH/vh),a=k/r.s,ox=(SW-vw*k)/2,oy=(SH-vh*k)/2;G={a,ox,oy};
@@ -584,7 +549,6 @@ async function startAR(useCam){
     const tick=()=>{if(!running)return;if(!locked&&!busy){busy=true;try{step()}catch(e){console.error(e)}busy=false}setTimeout(tick,mode=='scan'?200:120)};
     const fromStill=(src,iw,ih,snap,crop,ask,post)=>{ANX.track=0;                  // quét ảnh tĩnh độ phân giải cao (ảnh chụp hoặc ảnh tải lên)
       const r=scanSrc(src,iw,ih,1280,[2,4,8],undefined,crop),f=.5;r.C.forEach(c=>{c.x*=f;c.y*=f;c.r*=f});r.s*=f;r.dd=Math.max(1,(r.dd||2)>>1);
-      if(typeof TEDIT!='undefined'&&r.C.length){review(r,snap,ask?undefined:post||(()=>{}));return{editor:1}}   // luôn cho người dùng kiểm tra/chỉnh trước khi dựng
       if(r.tr.needConfirm){drawDet(r,iw,ih);askRel(r,snap,ask?undefined:post||(()=>{}));return r}
       if(!r.tr.ok){toast('Chưa nhận ra cây: '+r.tr.msg+(r.sh<2.2?' (ảnh mờ)':''));return null}
       if(ask){drawDet(r,iw,ih);ask2(r,snap)}else{const ms=libMatch(r.tr.root,r.C),m=ms[0];accept(r,snap,m&&m.sim>=.85&&(!ms[1]||m.sim-ms[1].sim>=.15)?m.L:undefined)}return r};
