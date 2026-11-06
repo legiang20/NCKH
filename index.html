@@ -71,6 +71,7 @@ body.scan #sweep{display:block}@keyframes sw{to{top:78%}}
 body.hp #tools,body.hp #trav,body.hp #info,body.hp #code{display:none!important}
 body.scan #bSnap,body.scan #bUp,body.scan #bMan{display:inline-block!important}
 #bSnap,#bUp,#bMan{display:none}
+body.nocam #bUp{display:inline-block!important}
 body.scan #tools,body.scan #trav,body.scan #info,body.scan #code,body.scan #modes,body.scan #vw,body.scan #bAna,body.scan #bLock,body.scan #bRe,body.scan #bMv{display:none!important}body.cfm #bMv{display:none!important}
 /* đang xác nhận số (bước 3/3): chưa hiện chức năng, chỉ còn thanh gọn ở dưới */
 body.cfm #tools,body.cfm #trav,body.cfm #info,body.cfm #code,body.cfm #modes,body.cfm #vw,body.cfm #bAna,body.cfm #bLock,body.cfm #bRe,body.cfm #coach{display:none!important}
@@ -1937,7 +1938,7 @@ function stopAR(){
   lockFn=null;rescanFn=null;isLocked=false;sync=()=>{};
   $('#ar').replaceChildren();load('');
   ['#hud','#coach','#toast','#err'].forEach(q=>{const e=$(q);if(e)e.style.display='none'});
-  document.body.classList.remove('locked','cfm','game','hp');document.body.classList.add('scan');
+  document.body.classList.remove('locked','cfm','game','hp','nocam');document.body.classList.add('scan');
   applyTheme();ui()}
 function goHome(){stopAR();$('#start').style.display='flex'}
 $('#bHome').onclick=()=>{
@@ -2086,6 +2087,18 @@ async function startAR(useCam){
         if(tr.needConfirm)return askRel(r2,snap,fin);
         if(fin){const ms=libMatch(r2.tr.root,r2.C),m=ms[0];accept(r2,snap,m&&m.sim>=.85&&(!ms[1]||m.sim-ms[1].sim>=.15)?m.L:undefined);fin(r2)}else ask2(r2,snap)};
       X.s2re=()=>{close();pend=false;stable=0;lastSig='';og.clearRect(0,0,SW,SH);drawFrame();say('🔍 Quét lại…',1500)}};
+    // Tự giải quyết các nút "chưa rõ nối lên nút nào": ưu tiên nét nối rõ nhất, sau đó nút nằm phía trên và gần nhất
+    const autoRel=r=>{let cur=r,ed=r.ed.concat(r.sf||[]);
+      for(let it=0;it<8;it++){const P=cur.tr.pend;if(!P||!P.length)break;
+        const conf=new Set(),rmv=new Set();
+        P.forEach(p=>{let b=p.cur;
+          if(!(b>=0)&&p.cands&&p.cands.length){const c0=r.C[p.v],sc=c=>{const q=r.C[c.p];return (c.s||0)*1e4-Math.hypot(q.x-c0.x,q.y-c0.y)-(q.y<c0.y?0:1e6)};b=p.cands.reduce((a,c)=>sc(c)>sc(a)?c:a,p.cands[0]).p}
+          if(!(b>=0))return;
+          conf.add(b+'>'+p.v);if(p.cur>=0&&b!=p.cur)rmv.add(ek(p.cur,p.v));if(!(p.cur>=0&&b==p.cur))ed.push([b,p.v])});
+        ed=ed.filter(([a,b])=>!rmv.has(ek(a,b)));
+        const tr=mkTree(r.C,ed,{ev:r.ev,wk:r.wk,conf});cur=Object.assign({},r,{ed,sf:[],tr});
+        if(tr.ok)return cur;if(!tr.needConfirm)return null}
+      return cur.tr.ok?cur:null};
     const accept=(r,snap,L,vals)=>{const vw=snap.width,vh=snap.height;const xs=r.C.flatMap(c=>[c.x-c.r,c.x+c.r]),ys=r.C.flatMap(c=>[c.y-c.r,c.y+c.r]),bw=Math.max(...xs)-Math.min(...xs),bh=Math.max(...ys)-Math.min(...ys);
             M={dd:r.dd,lo:r.lo||0,sm:r.sm||0,pts:r.C.map(c=>({x:c.x,y:c.y,r:c.r})),tree:r.tr.root,sig:r.tr.sig,cx:(Math.max(...xs)+Math.min(...xs))/2,cy:(Math.max(...ys)+Math.min(...ys))/2,pxS:Math.max(bw*1.18,bh*1.18/.77,60)};
             qr=1;qi=0;tx=ty=0;lost=0;mode='track';pend=false;og.clearRect(0,0,SW,SH);rig.visible=true;
@@ -2127,7 +2140,8 @@ async function startAR(useCam){
     };
     const tick=()=>{if(!running)return;if(!locked&&!busy){busy=true;try{step()}catch(e){console.error(e)}busy=false}setTimeout(tick,mode=='scan'?200:120)};
     const fromStill=(src,iw,ih,snap,crop,ask,post)=>{ANX.track=0;                  // quét ảnh tĩnh độ phân giải cao (ảnh chụp hoặc ảnh tải lên)
-      const r=scanSrc(src,iw,ih,1280,[2,4,8],undefined,crop),f=.5;r.C.forEach(c=>{c.x*=f;c.y*=f;c.r*=f});r.s*=f;r.dd=Math.max(1,(r.dd||2)>>1);
+      let r=scanSrc(src,iw,ih,1280,[2,4,8],undefined,crop);const f=.5;r.C.forEach(c=>{c.x*=f;c.y*=f;c.r*=f});r.s*=f;r.dd=Math.max(1,(r.dd||2)>>1);
+      if(r.tr.needConfirm&&!ask){const r2=autoRel(r);if(r2)r=r2}   // ảnh tải lên: tự chọn nút cha hợp lý nhất, không hỏi lại — dựng cây 3D luôn
       if(r.tr.needConfirm){drawDet(r,iw,ih);askRel(r,snap,ask?undefined:post||(()=>{}));return r}
       if(!r.tr.ok){toast('Chưa nhận ra cây: '+r.tr.msg+(r.sh<2.2?' (ảnh mờ)':''));return null}
       if(ask){drawDet(r,iw,ih);ask2(r,snap)}else{const ms=libMatch(r.tr.root,r.C),m=ms[0];accept(r,snap,m&&m.sim>=.85&&(!ms[1]||m.sim-ms[1].sim>=.15)?m.L:undefined)}return r};
@@ -2155,43 +2169,34 @@ async function startAR(useCam){
     }
     function countTree(n){return n?1+countTree(n.l)+countTree(n.r):0}
     function loadPaperTree(snap,items){
-      const detected=items.map(x=>x.text+(x.flag?'?':'')).join('  ');
-      const suggestion=prompt(
-        'OCR đọc được các số (theo vị trí gần từ trên xuống):\n'+(detected||'(chưa đọc được số nào)')+(items.some(x=>x.flag)?'\n(dấu ? = chưa chắc chắn, hãy đối chiếu với giấy)':'')+
-        '\n\nNhập cấu trúc cây để web dựng 3D. Ví dụ: 8(3(1,6),10)\n'+
-        'Cú pháp: gốc(con_trái,con_phải); để trống nếu thiếu nút, ví dụ 8(,10).',
-        ''
-      );
-      if(suggestion===null)return;
-      let parsed;
-      try{parsed=parseStr(suggestion)}catch(e){toast('Không phân tích được cấu trúc cây.');return}
-      if(!parsed||!Number.isFinite(Number(parsed.v))||countTree(parsed)<1||String(suggestion).replace(/\s+/g,'')!==treeStr(parsed)){toast('Cấu trúc cây chưa hợp lệ hoặc còn ký tự thừa. Ví dụ: 8(3(1,6),10)');return}
-      // Chỉ dùng OCR làm gợi ý; học sinh phải xác nhận cấu trúc để tránh dựng nhầm quan hệ cha-con.
-      if(!confirm('Cây bạn nhập có '+countTree(parsed)+' nút.\nCấu trúc: '+treeStr(parsed)+'\n\nDùng cây này để mở mô hình 3D?'))return;
-      root=parsed;S.orig=clone(root);S.sel=null;S.view='tree';S.grow=1;clear();refresh();
-      mode='track';locked=true;isLocked=true;pend=false;M=null;rig.visible=true;
-      document.body.classList.remove('scan','cfm');document.body.classList.add('locked');
-      og.clearRect(0,0,SW,SH);say('');ui();
-      toast('✅ Đã dựng cây từ ảnh hỗ trợ OCR. Hãy kiểm tra lại các nút và đường nối.');
-    }
-    $('#bUp').onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
-      inp.onchange=()=>{const fl=inp.files[0];if(!fl)return;if(!fl.type.startsWith('image/'))return toast('Vui lòng chọn file ảnh.');
-        const im=new Image();im.onload=async()=>{try{
-          const iw=im.naturalWidth,ih=im.naturalHeight,snap=document.createElement('canvas');snap.width=iw;snap.height=ih;snap.getContext('2d').drawImage(im,0,0);
-          const choice=prompt('Chọn kiểu sơ đồ trong ảnh:\nA — Chữ số nằm trong các nút hình tròn (nhận diện cây hiện có).\nB — Chữ số viết trực tiếp trên giấy ô li, không có hình tròn.','A');
-          if(!choice)return;
-          if(choice.trim().toUpperCase()==='B'){
-            toast('Đang đọc chữ số trên ảnh…');
+      const detected=items.map(x=>esc(x.text)+(x.flag?'?':'')).join('  ');
+      modal('Dựng cây từ chữ số trên giấy','<p>Web đọc được các số (từ trên xuống):<br><b>'+(detected||'(chưa đọc được số nào)')+'</b>'+(items.some(x=>x.flag)?'<br><small>Dấu ? = chưa chắc chắn, hãy đối chiếu với giấy.</small>':'')+'</p><label>Cấu trúc cây</label><input id="pcs" type="text" placeholder="ví dụ: 8(3(1,6),10)" autocomplete="off"><small>Cú pháp: gốc(con_trái,con_phải); để trống nếu thiếu nút, ví dụ 8(,10). Bạn cần nhập cấu trúc để tránh dựng nhầm quan hệ cha – con.</small>',()=>{
+        const sg=($('#pcs').value||'').trim();let parsed;
+        if(!sg){toast('Hãy nhập cấu trúc cây, ví dụ: 8(3(1,6),10)');return false}
+        try{parsed=parseStr(sg)}catch(e){toast('Không phân tích được cấu trúc cây.');return false}
+        if(!parsed||!Number.isFinite(Number(parsed.v))||countTree(parsed)<1||sg.replace(/\s+/g,'')!==treeStr(parsed)){toast('Cấu trúc cây chưa hợp lệ hoặc còn ký tự thừa. Ví dụ: 8(3(1,6),10)');return false}
+        root=parsed;S.orig=clone(root);S.sel=null;S.view='tree';S.grow=1;clear();
+        mode='track';locked=true;isLocked=true;pend=false;M=null;rig.visible=true;
+        document.body.classList.remove('scan','cfm');document.body.classList.add('locked');
+        og.clearRect(0,0,SW,SH);say('');
+        toast('✅ Đã dựng cây từ ảnh hỗ trợ OCR. Hãy kiểm tra lại các nút và đường nối.')},'Dựng cây 3D')}
+    $('#bUp').onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.style.display='none';document.body.appendChild(inp);
+      inp.onchange=()=>{const fl=inp.files[0];inp.remove();if(!fl)return;if(!(fl.type||'').startsWith('image/')&&!/\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(fl.name))return toast('Vui lòng chọn file ảnh.');
+        toast('⏳ Đang mở ảnh…');const url=URL.createObjectURL(fl);
+        const im=new Image();im.onerror=()=>{URL.revokeObjectURL(url);toast('Không mở được ảnh này (định dạng chưa hỗ trợ). Hãy thử ảnh JPG hoặc PNG.')};
+        im.onload=()=>{try{
+          const k0=Math.min(1,2400/Math.max(im.naturalWidth,im.naturalHeight)),iw=Math.round(im.naturalWidth*k0),ih=Math.round(im.naturalHeight*k0),snap=document.createElement('canvas');snap.width=iw;snap.height=ih;snap.getContext('2d').drawImage(im,0,0,iw,ih);URL.revokeObjectURL(url);
+          const runA=()=>{close();try{
+            const upPost=r=>{const k=Math.max(SW/iw,SH/ih);G={a:k/r.s,ox:(SW-iw*k)/2,oy:(SH-ih*k)/2};locked=true;isLocked=true;document.body.classList.add('locked');ui();toast('🖼 Cây dựng từ ảnh tải lên — đã cố định tại chỗ')};
+            const r=fromStill(snap,iw,ih,snap,undefined,undefined,upPost);if(!r||r.editor||r.tr.needConfirm)return;upPost(r)}catch(e){console.error(e);toast('Không xử lý được ảnh: '+(e.message||e))}};
+          const runB=async()=>{close();try{toast('Đang đọc chữ số trên ảnh…');
             const items=await readPaperDigits(snap);
             if(!items.length){toast('OCR chưa đọc được chữ số. Hãy dùng ảnh rõ hơn hoặc nhập cây bằng tay.');return}
-            await loadPaperTree(snap,items);
-            return;
-          }
-          if(choice.trim().toUpperCase()!=='A'){toast('Vui lòng chọn A hoặc B.');return}
-          const upPost=r=>{const k=Math.max(SW/iw,SH/ih);G={a:k/r.s,ox:(SW-iw*k)/2,oy:(SH-ih*k)/2};locked=true;isLocked=true;document.body.classList.add('locked');ui();toast('🖼 Cây dựng từ ảnh tải lên — đã cố định tại chỗ')};
-          const r=fromStill(snap,iw,ih,snap,undefined,undefined,upPost);if(!r||r.editor||r.tr.needConfirm)return;upPost(r);
-        }catch(e){console.error(e);toast('Không xử lý được ảnh: '+(e.message||e));}};
-        im.onerror=()=>toast('Không mở được ảnh này');im.src=URL.createObjectURL(fl)};inp.click()};
+            loadPaperTree(snap,items)}catch(e){console.error(e);toast('Không đọc được chữ số: '+(e.message||e))}};
+          runA();   // tải ảnh lên: nhận diện và dựng cây 3D trực tiếp, không hỏi kiểu sơ đồ
+        }catch(e){console.error(e);toast('Không xử lý được ảnh: '+(e.message||e))}};
+        im.src=url};
+      document.body.appendChild(inp);inp.click()};
     if(useCam){
       say('Bước 1/3 · 🔍 Đưa hình cây vào KHUNG VÀNG (kéo khung để dời, kéo chấm góc để đổi cỡ)');
       lockFn=q=>{if(mode!='track')return toast('Chưa nhận diện được cây để cố định');locked=!locked;isLocked=locked;document.body.classList.toggle('locked',locked);say('');if(!q)toast(locked?'📌 Đã cố định — cây giữ nguyên vị trí trên màn hình':'🔓 Đã bỏ cố định — cây bám theo hình giấy trở lại');ui()};
@@ -2200,7 +2205,7 @@ async function startAR(useCam){
       ui();tick();
     }else{                                                           // chế độ không cần camera: cây mẫu ở giữa màn hình, đổi cây bằng "Nhập cây"
       root=null;S.orig=null;S.sel=null;S.grow=1;rig.visible=true;
-      lockFn=()=>toast('Chế độ không camera: cây luôn nằm giữa màn hình');rescanFn=()=>setTimeout(()=>{stopAR();startAR(true)},0);
+      lockFn=()=>toast('Chế độ không camera: cây luôn nằm giữa màn hình');rescanFn=()=>setTimeout(()=>{stopAR();startAR(true)},0);document.body.classList.add('nocam');
       say('');ui();sync();setTimeout(()=>{const o=document.querySelector('#tools [data-op="inp"]');if(o)o.click()},0);
     }
     // ---- chạm chọn nút · kéo NÚT để đặt vị trí · kéo chỗ trống để dời/xoay · chụm để thu phóng, vặn để xoay · kéo KHUNG VÀNG khi đang quét ----
