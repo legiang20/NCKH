@@ -539,7 +539,7 @@ html[data-theme="light"] #trav #bNx{background:#2fb344;border-color:#8ce99a}
 <div id="modes" class="gl" role="tablist"><button data-mode="kham" title="Khám phá: xem thông số, thông tin nút, thêm / xóa / sửa nút">🔎<span> Khám phá</span></button><button data-mode="duyet" title="Duyệt cây: xem duyệt trước, giữa, sau, ngược kèm mã">🚶<span> Duyệt cây</span></button><button data-mode="choi" title="Trò chơi: duyệt đúng thứ tự, săn nút, trắc nghiệm">🎮<span> Trò chơi</span></button><small id="mdesc"></small></div>
 <div id="info" class="gl"></div><div id="code" class="gl"></div><div id="gm" class="gl"></div>
 <div id="tools" class="gl">
-<button id="tg" class="cx tgl" title="Thu gọn / mở rộng thanh công cụ"></button><div id="nsel" hidden><div id="nselT"></div><div class="nrow"><button data-n="add">＋ Thêm con</button><button data-n="upd">✎ Sửa</button><button data-n="del">－ Xóa</button></div></div><div id="tbar"><button id="bMenu">☰ Chức năng</button><button data-op="undo" title="Hoàn tác thao tác trước (Ctrl+Z)">↶</button><button data-op="redo" title="Làm lại thao tác vừa hoàn tác (Ctrl+Y)">↷</button><button data-op="lay" title="Đưa các nút và góc nhìn về vị trí ban đầu">↺</button></div><button data-op="search" title="Tìm một giá trị trên cây và xem đường đi">🔍 Tìm kiếm</button><button data-op="sort" title="Sắp xếp (phần này đang được bổ sung)">↕ Sắp xếp</button><div class="tgrp" data-g="edit"></div><button data-grp="edit" data-op="ad" title="Thêm nút mới hoặc xóa nút đang chọn (cùng một hộp)">＋/－ Thêm / Xóa</button><button data-grp="edit" data-op="upd" title="Đổi giá trị của nút đang chọn">✎ Cập nhật</button><button data-grp="edit" data-op="inp" title="Tạo cây mới, chỉnh sửa giá trị các nút, tạo cây mẫu, khôi phục cây ban đầu">⌨ Tạo / sửa cây</button><div class="tgrp" data-g="bst"></div><button data-grp="bst" data-op="avl" title="Kiểm tra cây có phải AVL không, rồi cân bằng bằng quay đơn / quay kép — xem từng bước">⚖ Cân bằng AVL</button><button data-grp="bst" data-op="avlcmp" title="So sánh cấu trúc cây trước và sau khi cân bằng AVL">↔ So sánh AVL</button><div class="tgrp" data-g="view"></div><button data-grp="view" data-op="img" title="Lưu ảnh cây thành tệp PNG để đưa vào bài tập, báo cáo">💾 Lưu ảnh cây</button><button data-op="game" title="Chơi game và làm trắc nghiệm trên chính cây này">🎮 Chọn trò chơi</button></div>
+<button id="tg" class="cx tgl" title="Thu gọn / mở rộng thanh công cụ"></button><div id="nsel" hidden><div id="nselT"></div><div class="nrow"><button data-n="add">＋ Thêm con</button><button data-n="upd">✎ Sửa</button><button data-n="del">－ Xóa</button></div></div><div id="tbar"><button id="bMenu">☰ Chức năng</button><button data-op="undo" title="Hoàn tác thao tác trước (Ctrl+Z)">↶</button><button data-op="redo" title="Làm lại thao tác vừa hoàn tác (Ctrl+Y)">↷</button><button data-op="lay" title="Đưa các nút và góc nhìn về vị trí ban đầu">↺</button></div><button data-op="search" title="Tìm một giá trị trên cây và xem đường đi">🔍 Tìm kiếm</button><button data-op="sort" title="Sắp xếp (phần này đang được bổ sung)">↕ Sắp xếp</button><button data-op="algo" title="Thuật toán sắp xếp: Insertion, Selection, Bubble, Merge — mô phỏng từng bước trên mảng">🧮 Thuật toán</button><div class="tgrp" data-g="edit"></div><button data-grp="edit" data-op="ad" title="Thêm nút mới hoặc xóa nút đang chọn (cùng một hộp)">＋/－ Thêm / Xóa</button><button data-grp="edit" data-op="upd" title="Đổi giá trị của nút đang chọn">✎ Cập nhật</button><button data-grp="edit" data-op="inp" title="Tạo cây mới, chỉnh sửa giá trị các nút, tạo cây mẫu, khôi phục cây ban đầu">⌨ Tạo / sửa cây</button><div class="tgrp" data-g="bst"></div><button data-grp="bst" data-op="avl" title="Kiểm tra cây có phải AVL không, rồi cân bằng bằng quay đơn / quay kép — xem từng bước">⚖ Cân bằng AVL</button><button data-grp="bst" data-op="avlcmp" title="So sánh cấu trúc cây trước và sau khi cân bằng AVL">↔ So sánh AVL</button><div class="tgrp" data-g="view"></div><button data-grp="view" data-op="img" title="Lưu ảnh cây thành tệp PNG để đưa vào bài tập, báo cáo">💾 Lưu ảnh cây</button><button data-op="game" title="Chơi game và làm trắc nghiệm trên chính cây này">🎮 Chọn trò chơi</button></div>
 <div id="trav" class="gl"><div class="r"><b id="tt"></b><select id="tk" title="Chọn kiểu duyệt cây"></select><span class="sp"></span>
 <span class="ctl"><button id="bPv" title="Lùi lại một bước">⏮</button><button id="bPlay" title="Phát / tạm dừng mô phỏng">▶</button><button id="bNx" title="Chạy từng bước: mỗi lần bấm xem đúng một bước">Bước tiếp ⏭</button>
 <select id="spd" title="Tốc độ phát"><option value="0.25">0.25x</option><option value="0.5" selected>0.5x</option><option value="1">1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select></span></div>
@@ -567,9 +567,11 @@ const rn=a=>a[Math.random()*a.length|0],sh=a=>[...a].sort(()=>Math.random()-.5);
 // ================= DỮ LIỆU CÂY (chính là cây vừa quét) =================
 let nid=1,root=null;
 const mk=(v,o)=>Object.assign({v},o,{id:nid++,l:null,r:null});
-const MODES={kham:{n:'Khám phá',ops:'ad undo redo inp img lay ana'},duyet:{n:'Duyệt cây',ops:'search sort avl avlcmp img lay'},choi:{n:'Trò chơi',ops:'game'}};
+const MODES={kham:{n:'Khám phá',ops:'ad undo redo inp img lay ana'},duyet:{n:'Duyệt cây',ops:'search sort algo avl avlcmp img lay'},choi:{n:'Trò chơi',ops:'game'}};
 let TR={off:0,i:0};try{TR.off=localStorage.getItem('arbt_tour')=='1'?1:0}catch(e){}
 const S={mode:'kham',notes:true,view:'tree',sel:null,kind:'pre',steps:[],i:-1,run:0,tm:0,speed:.5,bright:1,size:1,snd:true,orig:null,yaw:0,pitch:0,zoom:1,grow:0,spin:null,px:0,py:0,roll:0,mv:'orbit',dm:'rot',showCode:true,lang:'gia',ck:null};
+const AL={on:false,vals:null,V:{},gen:0,MAX:15,K:[['ins','Insertion Sort (sắp xếp chèn)'],['sel','Selection Sort (sắp xếp chọn)'],['bub','Bubble Sort (sắp xếp nổi bọt)'],['mer','Merge Sort (sắp xếp trộn)']],
+ init(){return{a:AL.vals.map((_,i)=>i),tmp:null,role:{},done:[]}},view(){const st=S.steps[S.i];return st&&st.sa?st.sa:AL.init()}};
 const kf=()=>'v';
 const isNum=v=>typeof v=='number';
 // Thứ tự so sánh trong BST: số nhỏ hơn chữ; số so theo giá trị; chữ / từ so theo thứ tự bảng chữ cái (không phân biệt hoa/thường vì chữ luôn được đổi thành chữ thường)
@@ -879,7 +881,7 @@ function ui(){H.ui();qWatch();
   $('#vw').hidden=md=='choi';$('#bMv').hidden=md=='choi';               // đổi cách hiển thị / cách kéo: Khám phá + Duyệt cây
   $('#mdesc').textContent=MDESC[md];
   const tg=$('#tg');tg.innerHTML=$('#tools').classList.contains('cl')?'🧰 ▸':'▾ Thu gọn';tg.title=$('#tools').classList.contains('cl')?'Mở rộng thanh công cụ':'Thu gọn thanh công cụ';
-  const ks=KS;if(!ks.some(k=>k[0]==S.kind))S.kind='in';
+  const ks=AL.on?AL.K:KS;if(!ks.some(k=>k[0]==S.kind))S.kind=AL.on?ks[0][0]:'in';
   const th=ks.map(k=>`<option value="${k[0]}" ${k[0]==S.kind?'selected':''}>${k[1]}</option>`).join('');if(ui.th!==th){ui.th=th;$('#tk').innerHTML=th}
   $('#tt').textContent=st&&st.t=='path'?'ĐƯỜNG ĐI':'MÔ PHỎNG';$('#bPlay').textContent=S.run?'⏸':'▶';$('#bPlay').title=S.run?'Tạm dừng':'Tự chạy lần lượt các bước';{const av=typeof avAct=='function'&&avAct();$('#tk').style.display=av?'none':'';$('#out').style.display=av?'none':''}
   const ids=st?st.out:[];$('#out').innerHTML=ids.map((id,j)=>`<span class="${st.cur==id&&j==ids.length-1?'cu':''}">${esc(trunc(disp(byId(id))))}</span>`).join('')||'<small style="opacity:.6;font-weight:400">Kết quả sẽ hiện ở đây</small>';
@@ -2403,6 +2405,17 @@ async function startAR(useCam){
       g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=12;g.strokeStyle='#07202c';g.strokeText(t,128,68);g.fillStyle=col;g.fillText(t,128,68);const x=new THREE.CanvasTexture(c);x.colorSpace=THREE.SRGBColorSpace;return tc[k]=x};
     const rc=document.createElement('canvas');rc.width=rc.height=128;const rg=rc.getContext('2d');rg.strokeStyle='#f76707';rg.lineWidth=9;rg.shadowColor='#ff922b';rg.shadowBlur=14;rg.beginPath();rg.arc(64,64,52,0,7);rg.stroke();const ringTex=new THREE.CanvasTexture(rc);
     const O={},E={},dying=[];let hits=[];
+    const sortG=new THREE.Group(),SC={};let sGen=-1;spin.add(sortG);sortG.visible=false;
+    const SCOL={cmp:'#ff6b35',sw:'#e64980',key:'#be4bdb',min:'#fab005',rng:'#7c8cf8'};
+    const sortDraw=()=>{const A=AL.view(),N=A.a.length,cs=Math.min(.12,.92/N),X=i=>(i-(N-1)/2)*cs;
+      if(sGen!=AL.gen){sGen=AL.gen;while(sortG.children.length){const c=sortG.children[0];sortG.remove(c)}for(const k in SC)delete SC[k];
+        A.a.forEach((id,i)=>{const g=new THREE.Group(),m=new THREE.Mesh(geoB,new THREE.MeshStandardMaterial({roughness:.3})),lb=new THREE.Sprite(new THREE.SpriteMaterial({map:labTex(trunc(String(AL.V[id]))),transparent:true,depthTest:false}));
+          m.scale.set(cs*.9,cs*.9,cs*.3);lb.scale.set(cs*.95,cs*.475,1);lb.position.z=cs*.2;lb.renderOrder=5;g.add(m,lb);g.position.set(X(i),cs*.5,0);sortG.add(g);SC[id]={g,m,t:new THREE.Vector3()};
+          const ix=new THREE.Sprite(new THREE.SpriteMaterial({map:labTex('['+i+']','#9fe8ff'),transparent:true,depthTest:false}));ix.scale.set(cs*.8,cs*.4,1);ix.position.set(X(i),-cs*.25,0);sortG.add(ix)})}
+      const dn=new Set(A.done);
+      A.a.forEach((id,i)=>{const c=SC[id];if(!c)return;const ti=A.tmp?A.tmp.ids.indexOf(id):-1,r=A.role[id];
+        const slot=ti>=0?A.tmp.o+ti:i,y=ti>=0?-cs*1.5:cs*.5+(r=='key'?cs*.8:r=='cmp'||r=='sw'||r=='min'?cs*.35:0);
+        c.t.set(X(slot),y,r=='key'?cs*.3:0);const col=SCOL[r]||(dn.has(id)?'#40c057':'#4dabf7');c.m.material.color.set(col);c.m.material.emissive.set(col);c.m.material.emissiveIntensity=(r?1:.55)*S.bright})};
     const newO=()=>{const g=new THREE.Group(),m1=new THREE.MeshStandardMaterial({roughness:.25,metalness:.2}),sph=new THREE.Mesh(geoS,m1),
       m2=new THREE.MeshBasicMaterial({transparent:true,opacity:.3,side:THREE.BackSide,blending:THREE.AdditiveBlending,depthWrite:false}),glow=new THREE.Mesh(geoS,m2);glow.scale.setScalar(1.3);sph.add(glow);
       const sp=()=>{const s=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false}));s.renderOrder=5;return s};
@@ -2414,6 +2427,8 @@ async function startAR(useCam){
       g.add(sph,rec,lab,ring,hit);content.add(g);return{g,m1,m2,mr,sph,rec,lab,pl,pr,ring,hit,t:new THREE.Vector3(),a:{sph:0,rec:0,lab:0},b:{sph:0,rec:0,lab:0},spin:0}};
     const newE=()=>{const g=new THREE.Group(),cyl=new THREE.Mesh(geoC,mEn);g.add(cyl);content.add(g);return{g,cyl}};
     sync=()=>{
+      if(AL.on&&AL.vals){content.visible=slots.visible=false;sortG.visible=true;hits=[];sortDraw();return}
+      content.visible=slots.visible=true;sortG.visible=false;
       const a=lvl(),n=a.length,v=S.view,st=S.steps[S.i],vis=(st&&st.out)||[],cu=st&&st.cur,rs=st&&st.res,Lm={};
       inord().forEach((x,i)=>Lm[x.id]={x:i,d:0,z:0,k:0});
       a.forEach(x=>{const e=Lm[x.id];[['l',1,1],['r',-1,2]].forEach(([s,g,o])=>{const c=x[s];if(c){const q=Lm[c.id];q.d=e.d+1;q.z=e.z+g*.07/(1+e.d*.6);q.k=2*e.k+o;q.p=x.id;q.left=s=='l'}})});
@@ -2461,6 +2476,7 @@ async function startAR(useCam){
         A.copy(p.g.position);B.copy(c.g.position);if(ptr){A.x+=(e.left?-1:1)*p.a.rec;A.y-=p.a.rec*.6;B.y+=c.a.rec*.6}
         B.sub(A);const L=B.length();if(L<1e-4){e.g.visible=false;continue}e.g.visible=true;e.g.position.copy(A);e.g.quaternion.setFromUnitVectors(Y,B.normalize());
         e.cyl.scale.set(.006,L,.006)}
+      if(sortG.visible)for(const id in SC){const c=SC[id];c.g.position.lerp(c.t,.2)}
       renderer.render(scene,cam)};
     sync();
     let pend=false,fail=0,mode='scan',locked=false,stable=0,lastSig='',M=null,qr=1,qi=0,tx=0,ty=0,lost=0,busy=false,G={a:1,ox:0,oy:0};
@@ -2825,6 +2841,92 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   const v=bad(root);toast('⚠ Cây này không phải cây BST'+(v&&v.v!==undefined?' (nút '+v.v+' không đúng luật trái nhỏ hơn, phải lớn hơn)':'')+', nên chưa dùng được chức năng này.')},true);
 /* Khám phá chỉ để xem nhẹ: thao tác nào có chạy từng bước thì nhắc qua Duyệt cây để hiểu rõ hơn */
 {const _ss=setSteps;setSteps=function(s){const r=_ss.apply(this,arguments);if(S.mode=='kham'&&s&&s.length)toast('💡 Muốn hiểu rõ từng bước và xem mã giả, hãy qua tab Duyệt cây');return r}}
+try{ui()}catch(e){}
+})();
+</script>
+<script>
+/* ===== thuat-toan.js — 4 thuật toán sắp xếp mô phỏng từng bước trên mảng AR (so sánh · đổi chỗ · dịch chuyển) ===== */
+(function(){
+const vl=id=>AL.V[id],nm=id=>String(vl(id)),gt=(x,y)=>cmp(vl(x),vl(y))>0;
+CODE.ins={gia:['insertion_sort(A, n)','  Với i từ 1 đến n-1','    key ← A[i]','    j ← i - 1','    Khi j ≥ 0 và A[j] > key','      A[j+1] ← A[j]   (dịch phải), j ← j - 1','      (hết vòng lặp)','    A[j+1] ← key'],
+ py:['def insertion_sort(A):','    for i in range(1, len(A)):','        key = A[i]','        j = i - 1','        while j >= 0 and A[j] > key:','            A[j+1] = A[j]; j -= 1','            # hết vòng lặp','        A[j+1] = key']};
+CODE.sel={gia:['selection_sort(A, n)','  Với i từ 0 đến n-2','    m ← i   (vị trí nhỏ nhất)','    Với j từ i+1 đến n-1','      Nếu A[j] < A[m] thì m ← j','    Nếu m ≠ i','      Đổi chỗ A[i] và A[m]'],
+ py:['def selection_sort(A):','    for i in range(len(A) - 1):','        m = i','        for j in range(i + 1, len(A)):','            if A[j] < A[m]: m = j','        if m != i:','            A[i], A[m] = A[m], A[i]']};
+CODE.bub={gia:['bubble_sort(A, n)','  Với i từ 0 đến n-2','    swapped ← false','    Với j từ 0 đến n-i-2','      Nếu A[j] > A[j+1]','        Đổi chỗ A[j], A[j+1]; swapped ← true','    Nếu swapped = false thì dừng'],
+ py:['def bubble_sort(A):','    for i in range(len(A) - 1):','        swapped = False','        for j in range(len(A) - i - 1):','            if A[j] > A[j+1]:','                A[j], A[j+1] = A[j+1], A[j]; swapped = True','        if not swapped: break']};
+CODE.mer={gia:['merge_sort(A, l, r)','  Nếu l ≥ r: dừng','  m ← (l + r) / 2','  merge_sort(A, l, m)   // nửa trái','  merge_sort(A, m+1, r) // nửa phải','  Trộn A[l..m] và A[m+1..r]:','    So sánh hai phần tử đầu, lấy nhỏ hơn đặt vào mảng phụ T','    Chép phần còn lại của nửa chưa hết vào T','    Chép T về A[l..r]'],
+ py:['def merge_sort(A, l, r):','    if l >= r: return','    m = (l + r) // 2','    merge_sort(A, l, m)','    merge_sort(A, m + 1, r)','    L, R, T = A[l:m+1], A[m+1:r+1], []','    while L and R: T.append((L if L[0] <= R[0] else R).pop(0))','    T += L + R','    A[l:r+1] = T']};
+
+function build(k){
+ const n=AL.vals.length,a=AL.vals.map((_,i)=>i),s=[],done=new Set();let tmp=null;
+ const P=(note,l,role,ls)=>s.push({t:'trav',cur:null,out:[],note,l,ls,sa:{a:[...a],tmp:tmp&&{o:tmp.o,ids:[...tmp.ids]},role:role||{},done:[...done]}});
+ const dn=m=>{done.clear();for(let t=0;t<=m;t++)done.add(a[t])};
+ P('Mảng ban đầu: '+a.map(nm).join(', ')+' — bấm ▶ hoặc "Bước tiếp" để bắt đầu',0,{});
+ if(k=='ins'){dn(0);P('A[0] = '+nm(a[0])+' coi như đã sắp xếp (phần màu xanh)',1);
+  for(let i=1;i<n;i++){const key=a[i];let j=i-1;
+   P('Lượt i = '+i+': nhấc key = '+nm(key)+' lên khỏi dãy',2,{[key]:'key'},[3]);
+   while(j>=0){const c=a[j],big=gt(c,key);
+    P('So sánh A['+j+'] = '+nm(c)+' với key = '+nm(key)+(big?' → '+nm(c)+' > '+nm(key)+', phải dịch '+nm(c)+' sang phải':' → '+nm(c)+' ≤ '+nm(key)+', dừng'),4,{[c]:'cmp',[key]:'key'});
+    if(!big)break;
+    a[j+1]=c;a[j]=key;P('Dịch '+nm(c)+' sang phải: A['+(j+1)+'] ← A['+j+']',5,{[c]:'sw',[key]:'key'});j--}
+   P('Đặt key = '+nm(key)+' vào A['+(j+1)+']',7,{[key]:'sw'});dn(i)}}
+ else if(k=='sel'){
+  for(let i=0;i<n-1;i++){let m=i;
+   P('Lượt i = '+i+': tạm coi A['+i+'] = '+nm(a[i])+' là nhỏ nhất',2,{[a[i]]:'min'});
+   for(let j=i+1;j<n;j++){const less=cmp(vl(a[j]),vl(a[m]))<0;
+    P('So sánh A['+j+'] = '+nm(a[j])+' với min = '+nm(a[m])+(less?' → nhỏ hơn, cập nhật min':' → giữ nguyên min'),4,{[a[m]]:'min',[a[j]]:'cmp'});if(less)m=j}
+   if(m!=i){const x=a[i],y=a[m];a[i]=y;a[m]=x;P('Min = '+nm(y)+' ≠ A['+i+'] → đổi chỗ '+nm(x)+' và '+nm(y),5,{[x]:'sw',[y]:'sw'},[6])}
+   else P('A['+i+'] = '+nm(a[i])+' đã là nhỏ nhất → không cần đổi chỗ',5,{[a[i]]:'min'});
+   dn(i)}}
+ else if(k=='bub'){
+  for(let i=0;i<n-1;i++){let sw=false;
+   P('Lượt '+(i+1)+': đẩy phần tử lớn nhất của A[0..'+(n-i-1)+'] về cuối',1,{},[2]);
+   for(let j=0;j<n-i-1;j++){const x=a[j],y=a[j+1],big=gt(x,y);
+    P('So sánh A['+j+'] = '+nm(x)+' với A['+(j+1)+'] = '+nm(y)+(big?' → '+nm(x)+' > '+nm(y)+', đổi chỗ':' → đúng thứ tự, giữ nguyên'),4,{[x]:'cmp',[y]:'cmp'},[3]);
+    if(big){a[j]=y;a[j+1]=x;sw=true;P('Đổi chỗ '+nm(x)+' và '+nm(y),5,{[x]:'sw',[y]:'sw'})}}
+   done.add(a[n-i-1]);
+   if(!sw){P('Lượt này không có lần đổi chỗ nào → mảng đã sắp xếp, dừng',6);break}}}
+ else{
+  const rg=(l,r)=>{const o={};for(let t=l;t<=r;t++)o[a[t]]='rng';return o};
+  const ms=(l,r)=>{if(l>=r)return;const m=(l+r)>>1;
+   P('Chia A['+l+'..'+r+'] thành A['+l+'..'+m+'] và A['+(m+1)+'..'+r+']',2,rg(l,r),[3,4]);
+   ms(l,m);ms(m+1,r);
+   const L=a.slice(l,m+1),R=a.slice(m+1,r+1),T=[];let i=0,j=0;tmp={o:l,ids:T};
+   P('Trộn hai nửa đã sắp xếp A['+l+'..'+m+'] và A['+(m+1)+'..'+r+'] vào mảng phụ T',5,rg(l,r));
+   while(i<L.length&&j<R.length){const x=L[i],y=R[j],tl=cmp(vl(x),vl(y))<=0,w=tl?x:y;T.push(w);tl?i++:j++;
+    const ro=rg(l,r);ro[x]='cmp';ro[y]='cmp';ro[w]='sw';
+    P('So sánh '+nm(x)+' (nửa trái) và '+nm(y)+' (nửa phải) → lấy '+nm(w)+' đưa xuống T',6,ro)}
+   const rest=[...L.slice(i),...R.slice(j)];
+   if(rest.length){rest.forEach(x=>T.push(x));const ro=rg(l,r);rest.forEach(x=>ro[x]='sw');P('Một nửa đã hết → chép phần còn lại ('+rest.map(nm).join(', ')+') xuống T',7,ro)}
+   for(let t=0;t<T.length;t++)a[l+t]=T[t];tmp=null;
+   P('Chép T về A['+l+'..'+r+'] → đoạn này đã sắp xếp',8,rg(l,r))};
+  ms(0,n-1)}
+ a.forEach(id=>done.add(id));P('Hoàn tất: '+a.map(nm).join(' ≤ '),0);
+ return s}
+const _t=window.tSteps;
+window.tSteps=function(k){return AL.on&&AL.vals&&AL.K.some(x=>x[0]==k)?build(k):_t.apply(this,arguments)};
+
+OP.algo=function(){
+ if(AL.on&&AL.vals){S.kind=AL.K.some(x=>x[0]==S.kind)?S.kind:'ins';return setSteps(tSteps(S.kind),S.kind)}   // đang ở Thuật toán: chạy lại
+ const cur=(root?lvl().map(n=>n.v):[]).slice(0,AL.MAX),def=cur.length>=2?cur:[38,27,43,3,9,82,10];
+ modal('🧮 Thuật toán sắp xếp','<div class="adinfo">Mảng cần sắp xếp (2–'+AL.MAX+' phần tử, ngăn cách bằng dấu cách hoặc dấu phẩy). Mặc định lấy các nút của cây theo thứ tự mảng T[] (duyệt theo mức).</div>'+F('alv','Mảng','' + def.join(', '),'text'),()=>{
+  const it=splitVals($('#alv').value).map(parseVal),bad1=it.find(r=>r.err);
+  if(bad1){toast(bad1.err);return false}
+  if(it.length<2||it.length>AL.MAX){toast('Cần từ 2 đến '+AL.MAX+' phần tử');return false}
+  AL.on=true;AL.vals=it.map(r=>r.v);AL.V={};AL.vals.forEach((v,i)=>AL.V[i]=v);AL.gen++;S.kind='ins';clear();setSteps(tSteps('ins'),'ins');
+  toast('🧮 Chọn thuật toán ở ô bên trên, bấm ▶ để xem từng bước')},'Bắt đầu')};
+
+/* thoát chế độ Thuật toán khi dùng chức năng / chế độ khác */
+const off=()=>{if(!AL.on)return;AL.on=false;AL.vals=null;clear();refresh()};
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-op],[data-mode]');if(!b||!AL.on)return;if(b.dataset.op=='algo')return;if(b.dataset.op=='undo'||b.dataset.op=='redo'||b.dataset.op=='lay')return;off()},true);
+
+/* thanh phát: nhãn, mảng hiện tại + chú thích màu */
+const _u=ui;ui=function(){_u();if(!AL.on||!AL.vals)return;
+ const st=S.steps[S.i],A=st&&st.sa?st.sa:AL.init(),col={cmp:'#ff6b35',sw:'#e64980',key:'#be4bdb',min:'#fab005'};
+ $('#tt').textContent='THUẬT TOÁN';$('#vw').hidden=true;
+ $('#out').innerHTML=A.a.map(id=>{const r=A.role[id],c=r&&col[r]?col[r]:A.done.includes(id)?'#40c057':'';return '<span'+(c?' style="border-color:'+c+';color:'+c+'"':'')+'>'+esc(trunc(vl(id)))+'</span>'}).join('')
+  +(A.tmp&&A.tmp.ids.length?'<small style="flex-basis:100%;opacity:.8">Mảng phụ T: '+A.tmp.ids.map(nm).join(', ')+'</small>':'');
+ $('#nt').innerHTML=esc(st?st.note:'Chọn thuật toán rồi bấm ▶')+'<br><small style="opacity:.75"><b style="color:#ff6b35">●</b> so sánh · <b style="color:#e64980">●</b> đổi chỗ / dịch chuyển · <b style="color:#be4bdb">●</b> key · <b style="color:#fab005">●</b> min · <b style="color:#40c057">●</b> đã xếp xong</small>'};
 try{ui()}catch(e){}
 })();
 </script>
